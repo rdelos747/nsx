@@ -1,2 +1,2 @@
 all:
-	g++ main.cpp -lncurses -lpanel -o ./build/editor
+	g++ main.cpp -lncurses -lpanel -o ./build/nsx
