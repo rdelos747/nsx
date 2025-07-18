@@ -3,7 +3,7 @@
 
 This is currently a simple side project for fun. I often find myself wanting something more featured than nano but not as cumbersome as an IDE (eg kate or vscode). Running from the terminal is also a plus. So, instead of learning vim like I'm supposed to, I will attempt to write my own editor :)
 
-`nsx` stands for `n`ew `s`oftware e`x`perimental and is no way a reference to anything else.
+`nsx` stands for `nsx` `s`oftware e`x`perience. This recurses for a while until it finally stops, where it then stands for `n`ew `s`oftware e`x`perimental, and is no way a reference to anything else. 
 
 ## building nsx
 Note, you must have `ncurses` on your system. Eg:

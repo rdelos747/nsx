@@ -1,7 +1,10 @@
 //#include <iostream>
+#include <ctime>
 #include <cstdio>
-//#include <filesystem>
+#include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <ncurses.h>
 #include <panel.h>
 #include <sstream>
@@ -9,8 +12,10 @@
 
 #define ctrl(c) (c & 0x1f)
 
+namespace fs = std::filesystem;
+
 int XMAX, YMAX;
-int CX = 0, CY = 0, SX = 0, SY = 0;
+int CX = 0, CY = 0, HX = 0, HY = 0, SX = 0, SY = 0;
 
 WINDOW* MEN_WIN;
 WINDOW* DIR_WIN;
@@ -21,17 +26,31 @@ bool MEN_BOT = true;
 bool SHOW_NUM = true;
 int DIR_WIDTH = 10;
 int NUM_WIDTH = 4;
+std::string LAST_INPUT;
+
+void clearLog() {
+    std::ofstream logFile;
+    logFile.open("log.txt", std::ios_base::out);
+    logFile.close();
+}
+
+void log(std::string text) {
+    std::ofstream logFile;
+    logFile.open("log.txt", std::ios_base::app);
+    logFile << text << '\n';
+    logFile.close();
+}
 
 void updateMenu() {
     werase(MEN_WIN);
     wattrset(MEN_WIN, A_STANDOUT | A_UNDERLINE);
     //const char* navString = "NAV BAR NAV BAR";
-    std::string menuString (XMAX - 10, ' ');
-    mvwprintw(MEN_WIN, 0, 0, "%s%d %d %d %d", menuString.c_str(),SY, SX, CY + 1, CX + 1);
+    std::string menuString (XMAX - 40, ' ');
+    mvwprintw(MEN_WIN, 0, 0, "%s %s %d %d %d %d", menuString.c_str(), LAST_INPUT.c_str(), SY, SX, CY, CX);
     wrefresh(MEN_WIN);
 }
 
-void updatePositions() {
+void updateLayout() {
     clear();
     refresh();
     if (MEN_BOT) {
@@ -54,6 +73,17 @@ void updatePositions() {
     wrefresh(NUM_WIN);
     wrefresh(TXT_WIN);
     //refresh();
+}
+
+std::string vecJoin(std::vector<std::string> input) {
+    std::string out;
+    for (int i = 0; i < input.size(); i++) {
+        out += input[i];
+        if (i < input.size() - 1) {
+            out += '\n';
+        }
+    }
+    return out;
 }
 
 std::vector<std::string> split(std::string input, char delim) {
@@ -81,7 +111,57 @@ std::string readFile(std::string path) {
     return out;
 }
 
-int main(int argc, char** ) {
+void saveFile(std::string data, std::string path) {
+    log("SAVING FILE " + path);
+    std::ofstream out;
+    out.open(path, std::ios_base::out);
+    out << data;
+    out.close();
+}
+
+std:: string getTime() {
+    std::time_t time = std::time(nullptr);
+    std::tm ltm = *std::localtime(&time);
+    std::ostringstream oss;
+    oss << std::put_time(&ltm, "%Y-%m-%d-%H-%M-%S");
+
+    return oss.str();
+}
+
+
+int main(int argc, char* argv[] ) {
+    clearLog();
+    log("===== start =====");
+
+
+    if (!fs::is_directory("backups") || !fs::exists("backups")) {
+        log("STARTUP: backups directory not found - creating.");
+        fs::create_directory("backups");
+    }
+
+    std::vector<std::string> texts = {""};
+
+    std::string cwd = fs::current_path().string();
+    log("STARTUP: CWD: " + cwd);
+
+    std::string fileName = "";
+    if (argc == 1) {
+        log("STARTUP: No filename provided, using blank file.");
+    }
+    else if (argc == 2) {
+        fileName = argv[1];
+        log("STARTUP: Opening file: " + fileName);
+
+        std::string data = readFile(cwd + fileName);
+        std::vector<std::string> texts = split(data, '\n');
+        saveFile(data, "./backups/backup-" + getTime() + "-" + fileName);
+    }
+
+
+    log("STARTUP: COMPLETE");
+
+
+
     initscr();
     keypad(stdscr, true);
     nonl();
@@ -97,56 +177,133 @@ int main(int argc, char** ) {
 
     scrollok(TXT_WIN, true);
 
-    std::string data = readFile("./test.txt");
-    std::vector<std::string> texts = split(data, '\n');
-
     wmove(TXT_WIN, 0, 0);
 
     updateMenu();
-    updatePositions();
+    updateLayout();
 
     bool running = true;
 
     while(running) {
+        int txt_win_w = (XMAX - 1) - (DIR_WIDTH + NUM_WIDTH); // todo name this better
+        bool layoutChanged = false;
         int ch = getch();
-        switch(ch) {
-            case ctrl('q'):
-                running = false;
-                break;
-            case ctrl('m'): //this is the same as enter for some reason
-                //running = false;
-                MEN_BOT = !MEN_BOT;
-                updatePositions();
-                break;
-            case KEY_UP:
-                CY = std::max(CY - 1, 0);
-                if (CY < SY) {
-                    SY -= 1;
+        std::string input(keyname(ch));
+        LAST_INPUT = input;
+
+        if (input == "^Q") {
+            running = false;
+            texts[0] += "YES";
+        }
+        else if (input == "^N") {
+            // I wanted this to be ^M but that is also KEY_ENTER for some reason
+            MEN_BOT = !MEN_BOT;
+            layoutChanged = true;
+        }
+        else if (input == "KEY_UP") {
+            CY = std::max(CY - 1, 0);
+        }
+        else if (input == "KEY_DOWN") {
+            CY = std::min(CY + 1, (int)texts.size() - 1);
+        }
+        else if (input == "KEY_LEFT") {
+            CX = std::max(CX - 1, 0);
+        }
+        else if (input == "kLFT5") {
+            CX = std::max(CX - 5, 0);
+        }
+        else if (input == "KEY_RIGHT") {
+            CX = CX + 1;
+        }
+        else if (input == "kRIT5") {
+            CX = CX + 5;
+        }
+
+        if (input == "KEY_BACKSPACE") {
+            std::string after = texts[CY].substr(CX, texts[CY].length());
+            if (CX > 0) {
+                std::string prev = texts[CY].substr(0, CX);
+
+                int n = 1;
+                while ((prev.length() - n) % 4 != 0 && prev[prev.length() - n] == ' ') {
+                    n += 1;
                 }
-                break;
-            case KEY_DOWN:
-                CY = std::min(CY + 1, (int)texts.size() - 1);
-                if (CY > SY + YMAX - 2) {
-                    SY += 1;
-                }
-                break;
-            case KEY_LEFT:
-                CX = std::max(CX - 1, 0);
-                break;
-            case KEY_RIGHT:
-                CX = CX + 1;
-                break;
-            default:
-                break;
+                prev = prev.substr(0, (int)prev.length() - n);
+
+                texts[CY] = prev + after;
+                CX -= n;
+            }
+            else if (CY > 0) {
+                CX = texts[CY - 1].length();
+                texts[CY - 1] += after;
+                texts.erase(texts.begin() + CY);
+                CY -= 1;
+            }
+        }
+        else if (input == "^M") { // ENTER
+            std::string prev = texts[CY].substr(0, CX);
+            int n = 0;
+            while (texts[CY][n] == ' ' && n < texts[CY].length()) {
+                n++;
+            }
+            std::string pad (n, ' ');
+            std::string cut;
+            if (CX < texts[CY].length()) {
+                cut = texts[CY].substr(CX, texts[CY].length());
+            }
+            cut = pad + cut;
+
+            texts[CY] = prev;
+            texts.insert(texts.begin() + CY + 1, cut);
+            CY += 1;
+            CX = pad.length();
+        }
+        else if (input == "^I") { // TAB
+            texts[CY].insert(CX, std::string (4, ' '));
+            CX += 4;
+        }
+        else if (input == "^S") {
+            std::string joined = vecJoin(texts);
+            saveFile(joined, cwd + fileName);
+        }
+        else if (input.size() == 1) {
+            texts[CY].insert(CX, input);
+            CX += 1;
         }
 
         if (CX > (int)texts[CY].size()) {
             CX = (int)texts[CY].size();
         }
 
-        int txt_win_w = (XMAX - 1) - (DIR_WIDTH + NUM_WIDTH); // todo name this better
+        // Handle scrolling
+        if (CY < SY) {
+            SY -= 1;
+        }
 
-        for (int j = 0; j < YMAX - 1; j++) {
+        if (CY > SY + YMAX - 2) {
+            SY += 1;
+        }
+
+        SY = std::min(SY, (int)texts.size() - YMAX + 1 );
+        SY = std::max(SY, 0);
+
+
+        if (CX < SX) {
+            SX -= 1;
+        }
+
+        if (CX > SX + txt_win_w - 1) {
+            SX += 1;
+        }
+
+        if ((int)texts[CY].size() < SX) {
+            SX = std::max(0, (int)texts[CY].size() - txt_win_w);
+        }
+
+        if (layoutChanged) updateLayout();
+
+        int txtLim = std::min(YMAX - 1, (int)texts.size());
+        for (int j = 0; j < txtLim; j++) {
             int idx = j + SY;
 
             std::string num = std::to_string(idx + 1);
@@ -154,16 +311,28 @@ int main(int argc, char** ) {
             mvwprintw(NUM_WIN, j, 0, "%s%s", num.c_str(), numPad.c_str());
 
             std::string text = texts[idx];
-            std::string sub = text.substr(CX, 30); // todo: this errors out when CX > text.size() I think.
-            std::string pad(std::max(0, txt_win_w - (int)text.size()), '.');
-            mvwaddnstr(TXT_WIN, j, 0, text.append(pad).c_str(), txt_win_w);
+            std::string sub;
+            if (SX < text.size()) {
+                sub = text.substr(SX, txt_win_w);
+            }
+
+            std::string pad(std::max(0, (txt_win_w + 1) - (int)sub.size()), '.');
+            mvwaddnstr(TXT_WIN, j, 0, sub.append(pad).c_str(), txt_win_w);
+        }
+
+        for (int j = txtLim; j < YMAX - 1; j++) {
+            int idx = j + SY;
+            std::string numPad (NUM_WIDTH, ' ');
+            mvwprintw(NUM_WIN, j, 0, "%s", numPad.c_str());
+
+            std::string pad(txt_win_w + 1, '.');
+            mvwaddnstr(TXT_WIN, j, 0, pad.c_str(), txt_win_w);
         }
 
         updateMenu();
-        wmove(TXT_WIN, std::min(CY - SY, YMAX - 2), std::min(CX, XMAX));
+        wmove(TXT_WIN, std::min(CY - SY, YMAX - 2), std::min(CX - SX, txt_win_w - 1));
         wrefresh(NUM_WIN);
         wrefresh(TXT_WIN);
-        //refresh();
     }
 
     endwin();
