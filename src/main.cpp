@@ -1,6 +1,24 @@
-//#include <iostream>
+/*
+IDEAS:
+- Try not to impliment class behaviors via inheritance, eg:
+    WRONG:
+    class Window:
+        void update:
+            ....
+    class MyWindow extends Window:
+        void update:
+            // some override stuff
+            ....
+
+    class Window:
+        bool scrollable;
+
+        void update:
+            if scrollable:
+                // call scroll function
+*/
+
 #include <ctime>
-#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -10,8 +28,11 @@
 #include <sstream>
 #include <vector>
 
+#include "utils.h"
+
 #define ctrl(c) (c & 0x1f)
 
+using namespace std;
 namespace fs = std::filesystem;
 
 int XMAX, YMAX;
@@ -26,27 +47,37 @@ bool MEN_BOT = true;
 bool SHOW_NUM = true;
 int DIR_WIDTH = 10;
 int NUM_WIDTH = 4;
-std::string LAST_INPUT;
+string LAST_INPUT;
+
+bool CMD_MODE = false;
+string CMD_NAME;
+string CMD_VAL;
 
 void clearLog() {
-    std::ofstream logFile;
-    logFile.open("log.txt", std::ios_base::out);
+    ofstream logFile;
+    logFile.open("log.txt", ios_base::out);
     logFile.close();
 }
 
-void log(std::string text) {
-    std::ofstream logFile;
-    logFile.open("log.txt", std::ios_base::app);
+void log(string text) {
+    ofstream logFile;
+    logFile.open("log.txt", ios_base::app);
     logFile << text << '\n';
     logFile.close();
 }
 
 void updateMenu() {
     werase(MEN_WIN);
-    wattrset(MEN_WIN, A_STANDOUT | A_UNDERLINE);
-    //const char* navString = "NAV BAR NAV BAR";
-    std::string menuString (XMAX - 40, ' ');
-    mvwprintw(MEN_WIN, 0, 0, "%s %s %d %d %d %d", menuString.c_str(), LAST_INPUT.c_str(), SY, SX, CY, CX);
+    wattrset(MEN_WIN, A_STANDOUT);
+    string statStr = vecJoin(vector<int>{SY, SX, CY, CX}, ' ');
+
+    string cmd;
+    if (CMD_MODE) {
+        cmd = vecJoin(vector<string>{"CMD:"}, ' ');
+    }
+
+    string menuString (XMAX - 2 - cmd.length() - statStr.length() - LAST_INPUT.length(), ' ');
+    mvwprintw(MEN_WIN, 0, 0, "%s %s %s %s", cmd.c_str(), menuString.c_str(), LAST_INPUT.c_str(), statStr.c_str());
     wrefresh(MEN_WIN);
 }
 
@@ -75,55 +106,19 @@ void updateLayout() {
     //refresh();
 }
 
-std::string vecJoin(std::vector<std::string> input) {
-    std::string out;
-    for (int i = 0; i < input.size(); i++) {
-        out += input[i];
-        if (i < input.size() - 1) {
-            out += '\n';
-        }
-    }
-    return out;
-}
-
-std::vector<std::string> split(std::string input, char delim) {
-    std::vector<std::string> out;
-    std::string line;
-    std::stringstream stream(input);
-    while(std::getline(stream, line, delim)) {
-        out.push_back(line);
-    }
-    return out;
-}
-
-std::string readFile(std::string path) {
-    //std::ifstream ifs(path, std::ios::in | std::ios::binary | std::ios::ate);
-    std::size_t readSize = std::size_t(4096);
-    std::ifstream stream = std::ifstream(path);
-
-    std::string out;
-    std::string buffer = std::string(readSize, '\0');
-    while(stream.read(&buffer[0], readSize)) {
-        out.append(buffer, 0, stream.gcount());
-    }
-    out.append(buffer, 0, stream.gcount());
-    //return split(out, '\n');
-    return out;
-}
-
-void saveFile(std::string data, std::string path) {
+void saveFile(string data, string path) {
     log("SAVING FILE " + path);
-    std::ofstream out;
-    out.open(path, std::ios_base::out);
+    ofstream out;
+    out.open(path, ios_base::out);
     out << data;
     out.close();
 }
 
-std:: string getTime() {
-    std::time_t time = std::time(nullptr);
-    std::tm ltm = *std::localtime(&time);
-    std::ostringstream oss;
-    oss << std::put_time(&ltm, "%Y-%m-%d-%H-%M-%S");
+string getTime() {
+    time_t time = std::time(nullptr);
+    tm ltm = *localtime(&time);
+    ostringstream oss;
+    oss << put_time(&ltm, "%Y-%m-%d-%H-%M-%S");
 
     return oss.str();
 }
@@ -139,12 +134,12 @@ int main(int argc, char* argv[] ) {
         fs::create_directory("backups");
     }
 
-    std::vector<std::string> texts = {""};
+    vector<string> texts = {""};
 
-    std::string cwd = fs::current_path().string();
+    string cwd = fs::current_path().string();
     log("STARTUP: CWD: " + cwd);
 
-    std::string fileName = "";
+    string fileName = "";
     if (argc == 1) {
         log("STARTUP: No filename provided, using blank file.");
     }
@@ -152,21 +147,20 @@ int main(int argc, char* argv[] ) {
         fileName = argv[1];
         log("STARTUP: Opening file: " + fileName);
 
-        std::string data = readFile(cwd + fileName);
-        std::vector<std::string> texts = split(data, '\n');
+        string data = readFile(cwd + fileName);
+        vector<string> texts = split(data, '\n');
         saveFile(data, "./backups/backup-" + getTime() + "-" + fileName);
     }
 
 
     log("STARTUP: COMPLETE");
 
-
-
     initscr();
     keypad(stdscr, true);
     nonl();
     noecho();
     raw();
+    set_escdelay(1);
     //cbreak();
     getmaxyx(stdscr, YMAX, XMAX);
 
@@ -188,7 +182,7 @@ int main(int argc, char* argv[] ) {
         int txt_win_w = (XMAX - 1) - (DIR_WIDTH + NUM_WIDTH); // todo name this better
         bool layoutChanged = false;
         int ch = getch();
-        std::string input(keyname(ch));
+        string input(keyname(ch));
         LAST_INPUT = input;
 
         if (input == "^Q") {
@@ -200,17 +194,20 @@ int main(int argc, char* argv[] ) {
             MEN_BOT = !MEN_BOT;
             layoutChanged = true;
         }
+        else if (input == "^[") {
+            CMD_MODE = ! CMD_MODE;
+        }
         else if (input == "KEY_UP") {
-            CY = std::max(CY - 1, 0);
+            CY = max(CY - 1, 0);
         }
         else if (input == "KEY_DOWN") {
-            CY = std::min(CY + 1, (int)texts.size() - 1);
+            CY = min(CY + 1, (int)texts.size() - 1);
         }
         else if (input == "KEY_LEFT") {
-            CX = std::max(CX - 1, 0);
+            CX = max(CX - 1, 0);
         }
         else if (input == "kLFT5") {
-            CX = std::max(CX - 5, 0);
+            CX = max(CX - 5, 0);
         }
         else if (input == "KEY_RIGHT") {
             CX = CX + 1;
@@ -220,9 +217,9 @@ int main(int argc, char* argv[] ) {
         }
 
         if (input == "KEY_BACKSPACE") {
-            std::string after = texts[CY].substr(CX, texts[CY].length());
+            string after = texts[CY].substr(CX, texts[CY].length());
             if (CX > 0) {
-                std::string prev = texts[CY].substr(0, CX);
+                string prev = texts[CY].substr(0, CX);
 
                 int n = 1;
                 while ((prev.length() - n) % 4 != 0 && prev[prev.length() - n] == ' ') {
@@ -241,13 +238,13 @@ int main(int argc, char* argv[] ) {
             }
         }
         else if (input == "^M") { // ENTER
-            std::string prev = texts[CY].substr(0, CX);
+            string prev = texts[CY].substr(0, CX);
             int n = 0;
             while (texts[CY][n] == ' ' && n < texts[CY].length()) {
                 n++;
             }
-            std::string pad (n, ' ');
-            std::string cut;
+            string pad (n, ' ');
+            string cut;
             if (CX < texts[CY].length()) {
                 cut = texts[CY].substr(CX, texts[CY].length());
             }
@@ -259,11 +256,11 @@ int main(int argc, char* argv[] ) {
             CX = pad.length();
         }
         else if (input == "^I") { // TAB
-            texts[CY].insert(CX, std::string (4, ' '));
+            texts[CY].insert(CX, string (4, ' '));
             CX += 4;
         }
         else if (input == "^S") {
-            std::string joined = vecJoin(texts);
+            string joined = vecJoin(texts, '\n');
             saveFile(joined, cwd + fileName);
         }
         else if (input.size() == 1) {
@@ -284,8 +281,8 @@ int main(int argc, char* argv[] ) {
             SY += 1;
         }
 
-        SY = std::min(SY, (int)texts.size() - YMAX + 1 );
-        SY = std::max(SY, 0);
+        SY = min(SY, (int)texts.size() - YMAX + 1 );
+        SY = max(SY, 0);
 
 
         if (CX < SX) {
@@ -297,40 +294,40 @@ int main(int argc, char* argv[] ) {
         }
 
         if ((int)texts[CY].size() < SX) {
-            SX = std::max(0, (int)texts[CY].size() - txt_win_w);
+            SX = max(0, (int)texts[CY].size() - txt_win_w);
         }
 
         if (layoutChanged) updateLayout();
 
-        int txtLim = std::min(YMAX - 1, (int)texts.size());
+        int txtLim = min(YMAX - 1, (int)texts.size());
         for (int j = 0; j < txtLim; j++) {
             int idx = j + SY;
 
-            std::string num = std::to_string(idx + 1);
-            std::string numPad (NUM_WIDTH - num.size(), ' ');
+            string num = to_string(idx + 1);
+            string numPad (NUM_WIDTH - num.size(), ' ');
             mvwprintw(NUM_WIN, j, 0, "%s%s", num.c_str(), numPad.c_str());
 
-            std::string text = texts[idx];
-            std::string sub;
+            string text = texts[idx];
+            string sub;
             if (SX < text.size()) {
                 sub = text.substr(SX, txt_win_w);
             }
 
-            std::string pad(std::max(0, (txt_win_w + 1) - (int)sub.size()), '.');
+            string pad(max(0, (txt_win_w + 1) - (int)sub.size()), '.');
             mvwaddnstr(TXT_WIN, j, 0, sub.append(pad).c_str(), txt_win_w);
         }
 
         for (int j = txtLim; j < YMAX - 1; j++) {
             int idx = j + SY;
-            std::string numPad (NUM_WIDTH, ' ');
+            string numPad (NUM_WIDTH, ' ');
             mvwprintw(NUM_WIN, j, 0, "%s", numPad.c_str());
 
-            std::string pad(txt_win_w + 1, '.');
+            string pad(txt_win_w + 1, '.');
             mvwaddnstr(TXT_WIN, j, 0, pad.c_str(), txt_win_w);
         }
 
         updateMenu();
-        wmove(TXT_WIN, std::min(CY - SY, YMAX - 2), std::min(CX - SX, txt_win_w - 1));
+        wmove(TXT_WIN, min(CY - SY, YMAX - 2), min(CX - SX, txt_win_w - 1));
         wrefresh(NUM_WIN);
         wrefresh(TXT_WIN);
     }

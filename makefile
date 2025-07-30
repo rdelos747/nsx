@@ -1,2 +1,10 @@
+CXX = g++
+CXX_FLAGS = -Wall
+
+TARG = ./bin/nsx
+SRCS = $(shell find $(SRC) -name *.cpp)
+LIBS = -lncurses -lpanel
+
 all:
-	g++ main.cpp -lncurses -lpanel -o ./build/nsx
+	$(CXX) $(CXX_FLAGS) $(SRCS) $(LIBS) -o $(TARG)
+
