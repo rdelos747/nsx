@@ -1,8 +1,9 @@
 #include <cstdio>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
+#include <string>
 #include <sstream>
-#include <stdexcept>
-#include <type_traits>
 #include <vector>
 
 using namespace std;
@@ -58,4 +59,34 @@ string readFile(string path) {
     }
     out.append(buffer, 0, stream.gcount());
     return out;
+}
+
+string getTime() {
+    time_t time = std::time(nullptr);
+    tm ltm = *localtime(&time);
+    ostringstream oss;
+    oss << put_time(&ltm, "%Y-%m-%d-%H-%M-%S");
+
+    return oss.str();
+}
+
+void clearLog() {
+    ofstream logFile;
+    logFile.open("log.txt", ios_base::out);
+    logFile.close();
+}
+
+void log(string text) {
+    ofstream logFile;
+    logFile.open("log.txt", ios_base::app);
+    logFile << text << '\n';
+    logFile.close();
+}
+
+void saveFile(string data, string path) {
+    log("SAVING FILE " + path);
+    ofstream out;
+    out.open(path, ios_base::out);
+    out << data;
+    out.close();
 }

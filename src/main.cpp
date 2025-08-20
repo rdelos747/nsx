@@ -18,30 +18,29 @@ IDEAS:
                 // call scroll function
 */
 
-#include <ctime>
 #include <filesystem>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <ncurses.h>
 #include <panel.h>
-#include <sstream>
+#include <string>
 #include <vector>
 
+#include "globals.h"
+#include "Pad.h"
 #include "utils.h"
 
 #define ctrl(c) (c & 0x1f)
 
 using namespace std;
-namespace fs = std::filesystem;
 
 int XMAX, YMAX;
-int CX = 0, CY = 0, HX = 0, HY = 0, SX = 0, SY = 0;
+//int CX = 0, CY = 0, HX = 0, HY = 0, SX = 0, SY = 0;
 
 WINDOW* MEN_WIN;
 WINDOW* DIR_WIN;
-WINDOW* TXT_WIN;
-WINDOW* NUM_WIN;
+//WINDOW* TXT_WIN;
+//WINDOW* NUM_WIN;
+vector<Pad*> PADS;
+Pad* CURP;
 
 bool MEN_BOT = true;
 bool SHOW_NUM = true;
@@ -53,30 +52,20 @@ bool CMD_MODE = false;
 string CMD_NAME;
 string CMD_VAL;
 
-void clearLog() {
-    ofstream logFile;
-    logFile.open("log.txt", ios_base::out);
-    logFile.close();
-}
-
-void log(string text) {
-    ofstream logFile;
-    logFile.open("log.txt", ios_base::app);
-    logFile << text << '\n';
-    logFile.close();
-}
-
 void updateMenu() {
     werase(MEN_WIN);
     wattrset(MEN_WIN, A_STANDOUT);
-    string statStr = vecJoin(vector<int>{SY, SX, CY, CX}, ' ');
+    string statStr = vecJoin(
+        vector<int>{CURP->sy, CURP->sx, CURP->cy, CURP->cx},
+        ' '
+    );
 
     string cmd;
     if (CMD_MODE) {
         cmd = vecJoin(vector<string>{"CMD:"}, ' ');
     }
 
-    string menuString (XMAX - 2 - cmd.length() - statStr.length() - LAST_INPUT.length(), ' ');
+    string menuString (XMAX - 3 - cmd.length() - statStr.length() - LAST_INPUT.length(), ' ');
     mvwprintw(MEN_WIN, 0, 0, "%s %s %s %s", cmd.c_str(), menuString.c_str(), LAST_INPUT.c_str(), statStr.c_str());
     wrefresh(MEN_WIN);
 }
@@ -87,73 +76,87 @@ void updateLayout() {
     if (MEN_BOT) {
         mvwin(MEN_WIN, YMAX - 1, 0);
         mvwin(DIR_WIN, 0, 0);
-        mvwin(NUM_WIN, 0, DIR_WIDTH);
-        mvwin(TXT_WIN, 0, DIR_WIDTH + NUM_WIDTH);
+        //mvwin(NUM_WIN, 0, DIR_WIDTH);
+        //mvwin(TXT_WIN, 0, DIR_WIDTH + NUM_WIDTH);
+        for (Pad* p: PADS) {
+            // todo: this will place pads ontop of
+            // eachother. need to place them next
+            // to eachother if split view
+            p->setPos(DIR_WIDTH, 0);
+        }
     }
     else {
         mvwin(MEN_WIN, 0, 0);
         mvwin(DIR_WIN, 1, 0);
-        mvwin(NUM_WIN, 1, DIR_WIDTH);
-        mvwin(TXT_WIN, 1, DIR_WIDTH + NUM_WIDTH);
+        //mvwin(NUM_WIN, 1, DIR_WIDTH);
+        //mvwin(TXT_WIN, 1, DIR_WIDTH + NUM_WIDTH);
+        for (Pad* p: PADS) {
+            // todo: this will place pads ontop of
+            // eachother. need to place them next
+            // to eachother if split view
+            p->setPos(DIR_WIDTH, 1);
+        }
     }
 
     //update_panels();
     mvwvline(DIR_WIN, 0, 9, 0, YMAX - 1);
     wrefresh(MEN_WIN);
     wrefresh(DIR_WIN);
-    wrefresh(NUM_WIN);
-    wrefresh(TXT_WIN);
+    //wrefresh(NUM_WIN);
+    //wrefresh(TXT_WIN);
     //refresh();
 }
-
-void saveFile(string data, string path) {
-    log("SAVING FILE " + path);
-    ofstream out;
-    out.open(path, ios_base::out);
-    out << data;
-    out.close();
-}
-
-string getTime() {
-    time_t time = std::time(nullptr);
-    tm ltm = *localtime(&time);
-    ostringstream oss;
-    oss << put_time(&ltm, "%Y-%m-%d-%H-%M-%S");
-
-    return oss.str();
-}
-
 
 int main(int argc, char* argv[] ) {
     clearLog();
     log("===== start =====");
 
 
+    /*
+    // todo: make this always in documents/nsx/
     if (!fs::is_directory("backups") || !fs::exists("backups")) {
         log("STARTUP: backups directory not found - creating.");
         fs::create_directory("backups");
     }
+    */
 
-    vector<string> texts = {""};
+    //vector<string> texts = {""};
 
-    string cwd = fs::current_path().string();
-    log("STARTUP: CWD: " + cwd);
+    string cwd = filesystem::current_path().string();
+    log("STARTUP " + getTime() + ": CWD: " + cwd);
 
-    string fileName = "";
+    string relPath = "";
+    log(to_string(argc));
     if (argc == 1) {
         log("STARTUP: No filename provided, using blank file.");
     }
     else if (argc == 2) {
-        fileName = argv[1];
-        log("STARTUP: Opening file: " + fileName);
+        relPath = argv[1];
+        /*
+        vector<string> filePathParts = split(relFilePath, '/');
+        string fileName = filePathParts[filePathParts.size() - 1];
 
-        string data = readFile(cwd + fileName);
-        vector<string> texts = split(data, '\n');
-        saveFile(data, "./backups/backup-" + getTime() + "-" + fileName);
+        if (relFilePath.substr(0,2) == "./") {
+            relFilePath = "/" + relFilePath;
+        }
+
+        log("STARTUP: Opening file: " + cwd + relFilePath);
+
+        string data = readFile(cwd + relFilePath);
+
+        log(to_string(data.size()));
+
+        texts = split(data, '\n');
+        string homeDir = getenv("HOME");
+        saveFile(
+            data,
+            homeDir + "/Documents/nsx/backups/backup-" + getTime() + "-" + fileName
+        );
+        */
     }
 
 
-    log("STARTUP: COMPLETE");
+
 
     initscr();
     keypad(stdscr, true);
@@ -166,12 +169,21 @@ int main(int argc, char* argv[] ) {
 
     MEN_WIN = newwin(1, XMAX, 0, 0);
     DIR_WIN = newwin(YMAX - 1, DIR_WIDTH, 1, 0);
-    NUM_WIN = newwin(YMAX - 1, NUM_WIDTH, 1, 0);
-    TXT_WIN = newwin(YMAX - 1, XMAX - (NUM_WIDTH + DIR_WIDTH), 1, NUM_WIDTH + DIR_WIDTH + 1);
+    //NUM_WIN = newwin(YMAX - 1, NUM_WIDTH, 1, 0);
+    //TXT_WIN = newwin(YMAX - 1, XMAX - (NUM_WIDTH + DIR_WIDTH), 1, NUM_WIDTH + DIR_WIDTH + 1);
 
-    scrollok(TXT_WIN, true);
+    //scrollok(TXT_WIN, true);
 
-    wmove(TXT_WIN, 0, 0);
+    //wmove(TXT_WIN, 0, 0);
+
+
+    CURP = new Pad(DIR_WIDTH, 1, XMAX - DIR_WIDTH, YMAX - 1);
+    CURP->loadFile(relPath);
+    CURP->putCursor(0, 0);
+    PADS.push_back(CURP);
+
+
+    log("STARTUP: COMPLETE");
 
     updateMenu();
     updateLayout();
@@ -187,7 +199,7 @@ int main(int argc, char* argv[] ) {
 
         if (input == "^Q") {
             running = false;
-            texts[0] += "YES";
+            // texts[0] += "YES";
         }
         else if (input == "^N") {
             // I wanted this to be ^M but that is also KEY_ENTER for some reason
@@ -197,6 +209,15 @@ int main(int argc, char* argv[] ) {
         else if (input == "^[") {
             CMD_MODE = ! CMD_MODE;
         }
+
+        if (layoutChanged) updateLayout();
+
+        CURP->takeInput(input);
+
+        updateMenu();
+
+        CURP->refresh();
+        /*
         else if (input == "KEY_UP") {
             CY = max(CY - 1, 0);
         }
@@ -215,7 +236,8 @@ int main(int argc, char* argv[] ) {
         else if (input == "kRIT5") {
             CX = CX + 5;
         }
-
+        */
+        /*
         if (input == "KEY_BACKSPACE") {
             string after = texts[CY].substr(CX, texts[CY].length());
             if (CX > 0) {
@@ -261,7 +283,7 @@ int main(int argc, char* argv[] ) {
         }
         else if (input == "^S") {
             string joined = vecJoin(texts, '\n');
-            saveFile(joined, cwd + fileName);
+            saveFile(joined, cwd + relFilePath);
         }
         else if (input.size() == 1) {
             texts[CY].insert(CX, input);
@@ -296,9 +318,9 @@ int main(int argc, char* argv[] ) {
         if ((int)texts[CY].size() < SX) {
             SX = max(0, (int)texts[CY].size() - txt_win_w);
         }
+        */
 
-        if (layoutChanged) updateLayout();
-
+        /*
         int txtLim = min(YMAX - 1, (int)texts.size());
         for (int j = 0; j < txtLim; j++) {
             int idx = j + SY;
@@ -330,6 +352,11 @@ int main(int argc, char* argv[] ) {
         wmove(TXT_WIN, min(CY - SY, YMAX - 2), min(CX - SX, txt_win_w - 1));
         wrefresh(NUM_WIN);
         wrefresh(TXT_WIN);
+        */
+    }
+
+    for (const Pad* p: PADS) {
+        delete p;
     }
 
     endwin();
