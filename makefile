@@ -1,7 +1,8 @@
 CXX = g++
-CXX_FLAGS = -Wall
+CXX_FLAGS = -Wall -w
 
 TARG = ./bin/nsx
+SRC = ./src
 SRCS = $(shell find $(SRC) -name *.cpp)
 LIBS = -lncurses -lpanel
 
