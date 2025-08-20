@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "Cursor.h"
+
 using namespace std;
 
 class Pad {
@@ -18,11 +20,13 @@ public:
 
     int x, y;
     int w, h;
-    int cx, cy;
+    //int& cx, cy;
     int sx, sy;
     int padWinW;
     vector<string> texts;
     string filePath;
+    vector<Cursor*> cursors;
+    Cursor* curc;
 
 private:
     WINDOW* numWin;

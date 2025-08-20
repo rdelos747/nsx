@@ -33,12 +33,9 @@ IDEAS:
 using namespace std;
 
 int XMAX, YMAX;
-//int CX = 0, CY = 0, HX = 0, HY = 0, SX = 0, SY = 0;
 
 WINDOW* MEN_WIN;
 WINDOW* DIR_WIN;
-//WINDOW* TXT_WIN;
-//WINDOW* NUM_WIN;
 vector<Pad*> PADS;
 Pad* CURP;
 
@@ -56,7 +53,7 @@ void updateMenu() {
     werase(MEN_WIN);
     wattrset(MEN_WIN, A_STANDOUT);
     string statStr = vecJoin(
-        vector<int>{CURP->sy, CURP->sx, CURP->cy, CURP->cx},
+        vector<int>{CURP->sx, CURP->sy, CURP->curc->x, CURP->curc->y},
         ' '
     );
 
