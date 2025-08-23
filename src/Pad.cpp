@@ -1,5 +1,7 @@
+#include "clip.h"
 #include <filesystem>
 #include <ncurses.h>
+
 #include "globals.h"
 #include "utils.h"
 
@@ -8,21 +10,18 @@
 Pad::Pad(int x, int y, int w, int h) {
     x = x, y = y;
     w = w, h = h;
-
-    //cx = 0, cy = 0;
     sx = 0, sy = 0;
-    
     curc = new Cursor();
-    //cx = curc->x;
-    //cy = curc->y;
-
     padWinW = w - NUM_WIDTH - 1;
-
     texts = {""};
-
+    touched = false;
     numWin = newwin(h, NUM_WIDTH, y, x);
     padWin = newwin(h, w - NUM_WIDTH, y, x + NUM_WIDTH);
     scrollok(padWin, true);
+    
+    string s;
+    clip::get_text(s);
+    log(s);
 }
 
 Pad::~Pad() {
@@ -37,6 +36,14 @@ Pad::~Pad() {
 }
 
 void Pad::loadFile(string relPath) {
+    if (relPath == "") {
+        fileName = "";
+    }
+    else {
+        vector<string> pathParts = split(relPath, '/');
+        fileName = pathParts[pathParts.size() - 1];
+    }
+    
     string cwd = filesystem::current_path().string();
     filePath = cwd + "/" + relPath;
 
@@ -46,8 +53,6 @@ void Pad::loadFile(string relPath) {
     if (data.size() > 0) {
         texts = split(data, '\n');
         
-        vector<string> pathParts = split(relPath, '/');
-        string fileName = pathParts[pathParts.size() - 1];
         string homeDir = getenv("HOME");
         saveFile(
             data,
@@ -56,6 +61,7 @@ void Pad::loadFile(string relPath) {
     }
     else {
         texts = {""};
+        touched = true;
     }
 }
 
@@ -187,8 +193,9 @@ void Pad::takeInput(string input) {
     }
     else if (input == "kRIT5") {
         cx = cx + 5;
-    }
+    }    
     else if (input == "KEY_BACKSPACE") {
+        touched = true;
         string after = texts[cy].substr(cx, texts[cy].length());
         if (cx > 0) {
             string prev = texts[cy].substr(0, cx);
@@ -210,6 +217,7 @@ void Pad::takeInput(string input) {
         }
     }
     else if (input == "^M") { // ENTER
+        touched = true;
         string prev = texts[cy].substr(0, cx);
         int n = 0;
         while (texts[cy][n] == ' ' && n < texts[cy].length()) {
@@ -228,14 +236,17 @@ void Pad::takeInput(string input) {
         cx = pad.length();
     }
     else if (input == "^I") { // TAB
+        touched = true;
         texts[cy].insert(cx, string (4, ' '));
         cx += 4;
     }
     else if (input == "^S") {
         string joined = vecJoin(texts, '\n');
         saveFile(joined, filePath);
+        touched = false;
     }
     else if (input.size() == 1) {
+        touched = true;
         texts[cy].insert(cx, input);
         cx += 1;
     }

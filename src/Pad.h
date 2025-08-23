@@ -17,6 +17,7 @@ public:
     void loadFile(string relPath);
     void putCursor(int x, int y);
     void setPos(int x, int y);
+    void copyToClipboard(bool isCut);
 
     int x, y;
     int w, h;
@@ -25,8 +26,10 @@ public:
     int padWinW;
     vector<string> texts;
     string filePath;
+    string fileName;
     vector<Cursor*> cursors;
     Cursor* curc;
+    bool touched;
 
 private:
     WINDOW* numWin;

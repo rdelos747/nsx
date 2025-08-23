@@ -57,13 +57,25 @@ void updateMenu() {
         ' '
     );
 
-    string cmd;
+    string left;
     if (CMD_MODE) {
-        cmd = vecJoin(vector<string>{"CMD:"}, ' ');
+        left = vecJoin(vector<string>{"CMD:"}, ' ');
     }
+    else {
+        if (CURP->fileName == "") {
+            left = "untitled";
+        } else {
+            left = CURP->fileName;
+        }
+        
+        if (CURP->touched) {
+            left = left + "*";
+        }
+    }
+    
 
-    string menuString (XMAX - 3 - cmd.length() - statStr.length() - LAST_INPUT.length(), ' ');
-    mvwprintw(MEN_WIN, 0, 0, "%s %s %s %s", cmd.c_str(), menuString.c_str(), LAST_INPUT.c_str(), statStr.c_str());
+    string menuString (XMAX - 3 - left.length() - statStr.length() - LAST_INPUT.length(), ' ');
+    mvwprintw(MEN_WIN, 0, 0, "%s %s %s %s", left.c_str(), menuString.c_str(), LAST_INPUT.c_str(), statStr.c_str());
     wrefresh(MEN_WIN);
 }
 
@@ -214,142 +226,6 @@ int main(int argc, char* argv[] ) {
         updateMenu();
 
         CURP->refresh();
-        /*
-        else if (input == "KEY_UP") {
-            CY = max(CY - 1, 0);
-        }
-        else if (input == "KEY_DOWN") {
-            CY = min(CY + 1, (int)texts.size() - 1);
-        }
-        else if (input == "KEY_LEFT") {
-            CX = max(CX - 1, 0);
-        }
-        else if (input == "kLFT5") {
-            CX = max(CX - 5, 0);
-        }
-        else if (input == "KEY_RIGHT") {
-            CX = CX + 1;
-        }
-        else if (input == "kRIT5") {
-            CX = CX + 5;
-        }
-        */
-        /*
-        if (input == "KEY_BACKSPACE") {
-            string after = texts[CY].substr(CX, texts[CY].length());
-            if (CX > 0) {
-                string prev = texts[CY].substr(0, CX);
-
-                int n = 1;
-                while ((prev.length() - n) % 4 != 0 && prev[prev.length() - n] == ' ') {
-                    n += 1;
-                }
-                prev = prev.substr(0, (int)prev.length() - n);
-
-                texts[CY] = prev + after;
-                CX -= n;
-            }
-            else if (CY > 0) {
-                CX = texts[CY - 1].length();
-                texts[CY - 1] += after;
-                texts.erase(texts.begin() + CY);
-                CY -= 1;
-            }
-        }
-        else if (input == "^M") { // ENTER
-            string prev = texts[CY].substr(0, CX);
-            int n = 0;
-            while (texts[CY][n] == ' ' && n < texts[CY].length()) {
-                n++;
-            }
-            string pad (n, ' ');
-            string cut;
-            if (CX < texts[CY].length()) {
-                cut = texts[CY].substr(CX, texts[CY].length());
-            }
-            cut = pad + cut;
-
-            texts[CY] = prev;
-            texts.insert(texts.begin() + CY + 1, cut);
-            CY += 1;
-            CX = pad.length();
-        }
-        else if (input == "^I") { // TAB
-            texts[CY].insert(CX, string (4, ' '));
-            CX += 4;
-        }
-        else if (input == "^S") {
-            string joined = vecJoin(texts, '\n');
-            saveFile(joined, cwd + relFilePath);
-        }
-        else if (input.size() == 1) {
-            texts[CY].insert(CX, input);
-            CX += 1;
-        }
-
-        if (CX > (int)texts[CY].size()) {
-            CX = (int)texts[CY].size();
-        }
-
-        // Handle scrolling
-        if (CY < SY) {
-            SY -= 1;
-        }
-
-        if (CY > SY + YMAX - 2) {
-            SY += 1;
-        }
-
-        SY = min(SY, (int)texts.size() - YMAX + 1 );
-        SY = max(SY, 0);
-
-
-        if (CX < SX) {
-            SX -= 1;
-        }
-
-        if (CX > SX + txt_win_w - 1) {
-            SX += 1;
-        }
-
-        if ((int)texts[CY].size() < SX) {
-            SX = max(0, (int)texts[CY].size() - txt_win_w);
-        }
-        */
-
-        /*
-        int txtLim = min(YMAX - 1, (int)texts.size());
-        for (int j = 0; j < txtLim; j++) {
-            int idx = j + SY;
-
-            string num = to_string(idx + 1);
-            string numPad (NUM_WIDTH - num.size(), ' ');
-            mvwprintw(NUM_WIN, j, 0, "%s%s", num.c_str(), numPad.c_str());
-
-            string text = texts[idx];
-            string sub;
-            if (SX < text.size()) {
-                sub = text.substr(SX, txt_win_w);
-            }
-
-            string pad(max(0, (txt_win_w + 1) - (int)sub.size()), '.');
-            mvwaddnstr(TXT_WIN, j, 0, sub.append(pad).c_str(), txt_win_w);
-        }
-
-        for (int j = txtLim; j < YMAX - 1; j++) {
-            int idx = j + SY;
-            string numPad (NUM_WIDTH, ' ');
-            mvwprintw(NUM_WIN, j, 0, "%s", numPad.c_str());
-
-            string pad(txt_win_w + 1, '.');
-            mvwaddnstr(TXT_WIN, j, 0, pad.c_str(), txt_win_w);
-        }
-
-        updateMenu();
-        wmove(TXT_WIN, min(CY - SY, YMAX - 2), min(CX - SX, txt_win_w - 1));
-        wrefresh(NUM_WIN);
-        wrefresh(TXT_WIN);
-        */
     }
 
     for (const Pad* p: PADS) {
