@@ -3,6 +3,8 @@
 
 This is currently a simple side project for fun. I often find myself wanting something more featured than nano but not as cumbersome as an IDE (eg kate or vscode). Running from the terminal is also a plus. So, instead of learning vim like I'm supposed to, I will attempt to write my own editor :)
 
+`nsx` is currently in development, but assuming I don't goof anything, it is stable enough to develop in, and in fact much of `nsx` was written within `nsx` itself. Sometimes I use `nsx` source files to test new features. This is probably a terrible idea. 
+
 `nsx` stands for `nsx` `s`oftware e`x`perience. This recurses for a while until it finally stops, where it then stands for `n`ew `s`oftware e`x`perimental, and is no way a reference to anything else. 
 
 ## building nsx
@@ -11,11 +13,16 @@ Note, you must have `ncurses` on your system. Eg:
 pacman -S ncurses
 ```
 
-1. `cd <my favorite path>/nsx`
-2. `make`
+Note, you must also have the `clip` submodule installed.
+
+1. `cd <my favorite path>/nsx/build`
+need to rebuild your makefile.
+3. `make`
 
 
 ## running nsx
 1. `cd <path to my favorite directory for working on projects>`
 2. `nsx` opens a blank instance of `nsx` in the current directory.
 3. `nsx <myFavoriteFileName.myFavoriteFileExtension>` opens a file with `nsx`. If the file doesn't exist, `nsx` will create it on save.
+
+## about nsx

@@ -9,20 +9,22 @@ using namespace std;
 
 class Pad {
 public:
-    Pad(int x, int y, int w, int h);
+    Pad(int nx, int ny, int nw, int nh);
     ~Pad();
 
     void refresh();
     void takeInput(string input);
     void loadFile(string relPath);
-    void putCursor(int x, int y);
-    void setPos(int x, int y);
-    void copyToClipboard(bool isCut);
+    void putNCursor(int x, int y);
+    void setPos(int nx, int ny);
+    CurPts clearAtCursorBounds();
+    void copyClip();
+    CurPts pasteClip();
 
     int x, y;
     int w, h;
     //int& cx, cy;
-    int sx, sy;
+    int scrx, scry;
     int padWinW;
     vector<string> texts;
     string filePath;

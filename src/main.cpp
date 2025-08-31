@@ -25,6 +25,7 @@ IDEAS:
 #include <vector>
 
 #include "globals.h"
+#include "Commander.h"
 #include "Pad.h"
 #include "utils.h"
 
@@ -32,28 +33,38 @@ IDEAS:
 
 using namespace std;
 
+struct CMDRes {
+    bool pass;
+    string res;
+};
+
+
 int XMAX, YMAX;
 
-WINDOW* MEN_WIN;
+//WINDOW* MEN_WIN;
 WINDOW* DIR_WIN;
+
+Commander* COMMANDER;
 vector<Pad*> PADS;
 Pad* CURP;
 
-bool MEN_BOT = true;
+bool CMD_BOT = true;
 bool SHOW_NUM = true;
 int DIR_WIDTH = 10;
 int NUM_WIDTH = 4;
 string LAST_INPUT;
 
-bool CMD_MODE = false;
-string CMD_NAME;
-string CMD_VAL;
+//bool CMD_MODE = false;
+//string CMD_NAME;
 
+//string CMD_VAL;
+
+/*
 void updateMenu() {
     werase(MEN_WIN);
     wattrset(MEN_WIN, A_STANDOUT);
     string statStr = vecJoin(
-        vector<int>{CURP->sx, CURP->sy, CURP->curc->x, CURP->curc->y},
+        vector<int>{CURP->scrx, CURP->scry, CURP->curc->x, CURP->curc->y},
         ' '
     );
 
@@ -78,15 +89,15 @@ void updateMenu() {
     mvwprintw(MEN_WIN, 0, 0, "%s %s %s %s", left.c_str(), menuString.c_str(), LAST_INPUT.c_str(), statStr.c_str());
     wrefresh(MEN_WIN);
 }
+*/
 
 void updateLayout() {
     clear();
     refresh();
-    if (MEN_BOT) {
-        mvwin(MEN_WIN, YMAX - 1, 0);
+    if (CMD_BOT) {
+        //mvwin(, YMAX - 1, 0);
+        COMMANDER->setPos(0, YMAX - 1);
         mvwin(DIR_WIN, 0, 0);
-        //mvwin(NUM_WIN, 0, DIR_WIDTH);
-        //mvwin(TXT_WIN, 0, DIR_WIDTH + NUM_WIDTH);
         for (Pad* p: PADS) {
             // todo: this will place pads ontop of
             // eachother. need to place them next
@@ -95,7 +106,8 @@ void updateLayout() {
         }
     }
     else {
-        mvwin(MEN_WIN, 0, 0);
+        //mvwin(MEN_WIN, 0, 0);
+        COMMANDER->setPos(0, 0);
         mvwin(DIR_WIN, 1, 0);
         //mvwin(NUM_WIN, 1, DIR_WIDTH);
         //mvwin(TXT_WIN, 1, DIR_WIDTH + NUM_WIDTH);
@@ -109,11 +121,22 @@ void updateLayout() {
 
     //update_panels();
     mvwvline(DIR_WIN, 0, 9, 0, YMAX - 1);
-    wrefresh(MEN_WIN);
+    //wrefresh(MEN_WIN);
     wrefresh(DIR_WIN);
     //wrefresh(NUM_WIN);
     //wrefresh(TXT_WIN);
     //refresh();
+}
+
+CMDRes runCommand(string cmd) {
+    vector<string> cmds = split(cmd, ' ');
+    
+    CMDRes res;
+    //res.pass = true;
+    //res.res = "Saved";
+    res.pass = false;
+    res.res = "Error";
+    return res;
 }
 
 int main(int argc, char* argv[] ) {
@@ -129,8 +152,6 @@ int main(int argc, char* argv[] ) {
     }
     */
 
-    //vector<string> texts = {""};
-
     string cwd = filesystem::current_path().string();
     log("STARTUP " + getTime() + ": CWD: " + cwd);
 
@@ -141,31 +162,7 @@ int main(int argc, char* argv[] ) {
     }
     else if (argc == 2) {
         relPath = argv[1];
-        /*
-        vector<string> filePathParts = split(relFilePath, '/');
-        string fileName = filePathParts[filePathParts.size() - 1];
-
-        if (relFilePath.substr(0,2) == "./") {
-            relFilePath = "/" + relFilePath;
-        }
-
-        log("STARTUP: Opening file: " + cwd + relFilePath);
-
-        string data = readFile(cwd + relFilePath);
-
-        log(to_string(data.size()));
-
-        texts = split(data, '\n');
-        string homeDir = getenv("HOME");
-        saveFile(
-            data,
-            homeDir + "/Documents/nsx/backups/backup-" + getTime() + "-" + fileName
-        );
-        */
     }
-
-
-
 
     initscr();
     keypad(stdscr, true);
@@ -176,7 +173,7 @@ int main(int argc, char* argv[] ) {
     //cbreak();
     getmaxyx(stdscr, YMAX, XMAX);
 
-    MEN_WIN = newwin(1, XMAX, 0, 0);
+    //MEN_WIN = newwin(1, XMAX, 0, 0);
     DIR_WIN = newwin(YMAX - 1, DIR_WIDTH, 1, 0);
     //NUM_WIN = newwin(YMAX - 1, NUM_WIDTH, 1, 0);
     //TXT_WIN = newwin(YMAX - 1, XMAX - (NUM_WIDTH + DIR_WIDTH), 1, NUM_WIDTH + DIR_WIDTH + 1);
@@ -186,15 +183,18 @@ int main(int argc, char* argv[] ) {
     //wmove(TXT_WIN, 0, 0);
 
 
+    
+    COMMANDER = new Commander(0, 0, XMAX - 1);
+    
     CURP = new Pad(DIR_WIDTH, 1, XMAX - DIR_WIDTH, YMAX - 1);
     CURP->loadFile(relPath);
-    CURP->putCursor(0, 0);
+    CURP->putNCursor(0, 0);
     PADS.push_back(CURP);
 
 
     log("STARTUP: COMPLETE");
 
-    updateMenu();
+    //updateMenu();
     updateLayout();
 
     bool running = true;
@@ -208,26 +208,52 @@ int main(int argc, char* argv[] ) {
 
         if (input == "^Q") {
             running = false;
-            // texts[0] += "YES";
         }
         else if (input == "^N") {
             // I wanted this to be ^M but that is also KEY_ENTER for some reason
-            MEN_BOT = !MEN_BOT;
+            CMD_BOT = !CMD_BOT;
             layoutChanged = true;
         }
         else if (input == "^[") {
-            CMD_MODE = ! CMD_MODE;
+            //CMD_MODE = ! CMD_MODE;
+            COMMANDER->commanding = !COMMANDER->commanding;
+            COMMANDER->reset();
         }
 
         if (layoutChanged) updateLayout();
-
-        CURP->takeInput(input);
-
-        updateMenu();
-
+        if (COMMANDER->commanding) {
+            COMMANDER->takeInput(input);
+            
+            if (input == "^M") { // ENTER
+                CMDRes res = runCommand(COMMANDER->cmd);
+                if (res.pass) {
+                    COMMANDER->commanding = false;
+                    COMMANDER->setResult(res.res);
+                }
+                else {
+                    COMMANDER->setError(res.res);
+                }
+            }
+        }
+        else {
+            CURP->takeInput(input);
+            COMMANDER->updateT();
+        }
+        
+        //updateMenu();
+        string fname = CURP->fileName;
+        if (CURP->touched) {
+            fname += "*";
+        }
+        string stat = vecJoin(
+            vector<int>{CURP->scrx, CURP->scry, CURP->curc->x, CURP->curc->y},
+            ' '
+        );
+        COMMANDER->refresh(fname, LAST_INPUT + " " + stat);
         CURP->refresh();
     }
 
+    delete COMMANDER;
     for (const Pad* p: PADS) {
         delete p;
     }
