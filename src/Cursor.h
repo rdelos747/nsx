@@ -1,3 +1,6 @@
+#ifndef CURSOR_H
+#define CURSOR_H
+
 using namespace std;
 
 struct CurPts {
@@ -18,3 +21,5 @@ public:
     int ox, oy; //origin x, y
     bool drag;
 };
+
+#endif

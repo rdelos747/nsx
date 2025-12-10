@@ -13,6 +13,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -w")
 # Find all .cpp source files in the src directory
 file(GLOB SRCS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
+message(STATUS "Source files: ${SRCS}")
+
 # Add the executable target
 add_executable(nsx ${SRCS})
 

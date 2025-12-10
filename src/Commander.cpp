@@ -50,7 +50,7 @@ void Commander::refresh(string nleft, string ndet) {
         left = nleft;
     }
     
-    log(to_string(w));
+    //log(to_string(w));
     
     string middle (w - 3 - left.length() - ndet.length(), ' ');
     mvwprintw(win, 0, 0, "%s %s %s", left.c_str(), middle.c_str(), ndet.c_str());

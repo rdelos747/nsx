@@ -6,27 +6,19 @@
 #include <sstream>
 #include <vector>
 
+#include "globals.h"
+#include "utils.h"
+
 using namespace std;
 
-template <typename T>
-string str(const T& val) {
-    if constexpr (is_arithmetic<T>::value) {
-        return to_string(val);
-    }
-    if constexpr (is_same<T, string>::value) {
-        return val;
-    }
-
-    stringstream strm;
-    strm << "str function: cannot cast type:" << typeid(T).name() << "to string";
-    throw invalid_argument(strm.str());
+string boolstr(bool b) {
+    return b ? "true" : "false";
 }
 
-template <typename T>
-string vecJoin(const vector<T>& input, char delim) {
+string vecJoin(const vector<string>& input, char delim) {
     string out;
     for (int i = 0; i < input.size(); i++) {
-        out += str(input[i]);
+        out += input[i];
 
         if (i < input.size() - 1) {
             out += delim;
@@ -34,9 +26,6 @@ string vecJoin(const vector<T>& input, char delim) {
     }
     return out;
 }
-
-template string vecJoin<int>(const vector<int>& input, char delim);
-template string vecJoin<string>(const vector<string>& input, char delim);
 
 vector<string> split(string input, char delim) {
     vector<string> out;
@@ -70,23 +59,24 @@ string getTime() {
     return oss.str();
 }
 
-void clearLog() {
-    ofstream logFile;
-    logFile.open("log.txt", ios_base::out);
-    logFile.close();
-}
-
-void log(string text) {
-    ofstream logFile;
-    logFile.open("log.txt", ios_base::app);
-    logFile << text << '\n';
-    logFile.close();
-}
-
 void saveFile(string data, string path) {
     log("SAVING FILE " + path);
     ofstream out;
     out.open(path, ios_base::out);
     out << data;
     out.close();
+}
+
+Pt in_win(WINDOW* win, int x, int y) {
+    int wh, ww;
+    int wy, wx;
+    getbegyx(win, wy, wx);
+    getmaxyx(win, wh, ww);
+    
+    Pt pt;
+    pt.x = x - wx;
+    pt.y = y - wy;
+    pt.in = pt.x >= 0 && pt.x <= ww && pt.y >= 0 && pt.y <= wh;
+
+    return pt;
 }

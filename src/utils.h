@@ -1,13 +1,20 @@
+#ifndef UTILS_H
+#define UTILS_H
+
+#include <curses.h>
 #include <string>
 #include <vector>
+#include <sstream>
+#include <type_traits>
+#include <typeinfo>
+
+#include "log.h"
 
 using namespace std;
 
-template <typename T>
-string str(const T& val);
+string boolstr(bool b);
 
-template <typename T>
-string vecJoin(const vector<T>& input, char delim);
+string vecJoin(const vector<string>& input, char delim);
 
 vector<string> split(string input, char delim);
 
@@ -17,6 +24,12 @@ string getTime();
 
 void saveFile(string data, string path);
 
-void log(string text);
+struct Pt {
+    int x;
+    int y;
+    bool in;
+};
 
-void clearLog();
+Pt in_win(WINDOW* win, int x, int y);
+
+#endif

@@ -25,9 +25,11 @@ IDEAS:
 #include <vector>
 
 #include "globals.h"
+#include "log.h"
+#include "utils.h"
+
 #include "Commander.h"
 #include "Pad.h"
-#include "utils.h"
 
 #define ctrl(c) (c & 0x1f)
 
@@ -52,44 +54,15 @@ bool CMD_BOT = true;
 bool SHOW_NUM = true;
 int DIR_WIDTH = 10;
 int NUM_WIDTH = 4;
+int NEXT_LORE_IDX = 0;
+
 string LAST_INPUT;
+string HOME_DIR = getenv("HOME");
 
 //bool CMD_MODE = false;
 //string CMD_NAME;
 
 //string CMD_VAL;
-
-/*
-void updateMenu() {
-    werase(MEN_WIN);
-    wattrset(MEN_WIN, A_STANDOUT);
-    string statStr = vecJoin(
-        vector<int>{CURP->scrx, CURP->scry, CURP->curc->x, CURP->curc->y},
-        ' '
-    );
-
-    string left;
-    if (CMD_MODE) {
-        left = vecJoin(vector<string>{"CMD:"}, ' ');
-    }
-    else {
-        if (CURP->fileName == "") {
-            left = "untitled";
-        } else {
-            left = CURP->fileName;
-        }
-        
-        if (CURP->touched) {
-            left = left + "*";
-        }
-    }
-    
-
-    string menuString (XMAX - 3 - left.length() - statStr.length() - LAST_INPUT.length(), ' ');
-    mvwprintw(MEN_WIN, 0, 0, "%s %s %s %s", left.c_str(), menuString.c_str(), LAST_INPUT.c_str(), statStr.c_str());
-    wrefresh(MEN_WIN);
-}
-*/
 
 void updateLayout() {
     clear();
@@ -130,12 +103,14 @@ void updateLayout() {
 
 CMDRes runCommand(string cmd) {
     vector<string> cmds = split(cmd, ' ');
+    loga("got command", cmd);
     
     CMDRes res;
     //res.pass = true;
     //res.res = "Saved";
     res.pass = false;
     res.res = "Error";
+    
     return res;
 }
 
@@ -172,7 +147,11 @@ int main(int argc, char* argv[] ) {
     set_escdelay(1);
     //cbreak();
     getmaxyx(stdscr, YMAX, XMAX);
-
+    
+    mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+    mouseinterval(0);
+    printf("\033[?1003h\n");
+        
     //MEN_WIN = newwin(1, XMAX, 0, 0);
     DIR_WIN = newwin(YMAX - 1, DIR_WIDTH, 1, 0);
     //NUM_WIN = newwin(YMAX - 1, NUM_WIDTH, 1, 0);
@@ -200,7 +179,7 @@ int main(int argc, char* argv[] ) {
     bool running = true;
 
     while(running) {
-        int txt_win_w = (XMAX - 1) - (DIR_WIDTH + NUM_WIDTH); // todo name this better
+        //int txt_win_w = (XMAX - 1) - (DIR_WIDTH + NUM_WIDTH); // todo name this better
         bool layoutChanged = false;
         int ch = getch();
         string input(keyname(ch));
@@ -246,7 +225,12 @@ int main(int argc, char* argv[] ) {
             fname += "*";
         }
         string stat = vecJoin(
-            vector<int>{CURP->scrx, CURP->scry, CURP->curc->x, CURP->curc->y},
+            {
+                to_string(CURP->scrx),
+                to_string(CURP->scry),
+                to_string(CURP->curc->x),
+                to_string(CURP->curc->y)
+            },
             ' '
         );
         COMMANDER->refresh(fname, LAST_INPUT + " " + stat);
@@ -258,6 +242,7 @@ int main(int argc, char* argv[] ) {
         delete p;
     }
 
+    printf("\033[?1003l\n");
     endwin();
     return 0;
 }
