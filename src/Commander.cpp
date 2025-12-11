@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "Commander.h"
+#include "NSX.h"
 
 Commander::Commander(int nx, int ny, int nw) {
     x = x, ny = ny, w = nw;
@@ -10,6 +11,7 @@ Commander::Commander(int nx, int ny, int nw) {
 }
 
 Commander::~Commander() {
+    log("deleting commander");
     delwin(win);
 }
 
@@ -24,16 +26,25 @@ void Commander::reset() {
     cx = 0;
 }
 
-void Commander::setResult(string res) {
-    cmd = res;
-    resultT = 5;    
+void Commander::start(string c) {
+    reset();
+    cmd = c + " ";
+    cx = cmd.length();
+    commanding = true;
 }
 
 void Commander::updateT() {
     resultT = max(resultT - 1, 0);
 }
 
+void Commander::setSucc(string res) {
+    commanding = false;
+    cmd = res;
+    resultT = 5;    
+}
+
 void Commander::setError(string error) {
+    commanding = true;
     cmd = error;
     resultT = -1;
 }
@@ -88,4 +99,71 @@ void Commander::takeInput(string input) {
         cmd.insert(cx, input);
         cx += 1;
     }
+}
+
+void Commander::runCommand(string c) {
+    reset();
+    cmd = c;
+    runCommand();
+}
+
+void Commander::runCommand() {
+    vector<string> cmds = split(cmd, ' ');
+    loga("RUNNING COMMAND", cmd);
+    
+    if (cmds.size() == 0) {
+        setSucc("No Command");
+        return;
+    }
+    
+    if (cmds[0] == "save") {
+        NSX.CURP->save();
+        //setSucc("SAVED " + NSX.CURP->fileName);
+        return;
+    }
+    
+    if (cmds[0] == "quit") {
+        NSX.tryQuit();
+        return;
+    }
+    
+    if (cmds[0] == "UNSAVED") {
+        string r = cmds[cmds.size() - 1];
+        loga("running save quit check, got", r);
+        if (r == "y" || r == "yes") {
+            NSX.forceQuit();
+        }
+        else {
+            setSucc("QUIT CANCELLED");
+        }
+        return;
+    }
+    
+    if (cmds[0] == "find") {
+        if (cmds.size() < 2) {
+            setSucc("NO SEARCH SPECIFIED :(");
+            return;
+        }
+        
+        CurPts pts = NSX.CURP->find(cmd.substr(5));
+        if (pts.sx >= 0 && pts.sy >= 0) {
+            NSX.CURP->curc->move(pts.sx, pts.sy, false);
+        }
+        return; 
+    }
+    
+    if (cmds[0] == "findn") {
+        if (NSX.CURP->curFind == "") {
+            setSucc("NO SEARCH SPECIFIED :(");
+            return;
+        }
+        
+        CurPts pts = NSX.CURP->findn();
+        if (pts.sx >= 0 && pts.sy >= 0) {
+            NSX.CURP->curc->move(pts.sx, pts.sy, false);
+        }
+        return; 
+    }
+    
+    setError("I don't recognize this command :(");
 }

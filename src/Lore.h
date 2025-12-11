@@ -16,12 +16,15 @@ public:
     LoreNode();
     ~LoreNode();
     void add(int line, string text);
+    void setCur(int x, int y);
     
     int id;
     LoreTarg targ;
     LoreNode* prev;
     LoreNode* next;
     map<int, string> lines;
+    int cx;
+    int cy;
 };
 
 struct LoreState {

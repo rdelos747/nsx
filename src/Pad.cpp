@@ -2,13 +2,14 @@
 #include <filesystem>
 #include <ncurses.h>
 
-#include "globals.h"
+//#include "globals.h"
 #include "log.h"
 #include "utils.h"
 
+#include "NSX.h"
 #include "Pad.h"
 
-Pad::Pad(int nx, int ny, int nw, int nh) :
+Pad::Pad(int nx, int ny, int nw, int nh, int yoff) :
     lore() {
     
     x = nx, y = ny;
@@ -17,16 +18,18 @@ Pad::Pad(int nx, int ny, int nw, int nh) :
     mouseDragging = 0;
     scrx = 0, scry = 0;
     curc = new Cursor();
-    padWinW = w - NUM_WIDTH - 1;
+    padWinW = w - NSX.NUM_WIDTH - 1;
     texts = {""};
     touched = false;
-    numWin = newwin(h, NUM_WIDTH, y, x);
-    padWin = newwin(h, w - NUM_WIDTH, y, x + NUM_WIDTH);
+    numWin = newwin(h, NSX.NUM_WIDTH, y, x);
+    padWin = newwin(h, w - NSX.NUM_WIDTH, y, x + NSX.NUM_WIDTH);
     scrollok(padWin, true);
     
    // string s;
    // clip::get_text(s);
    // log(s);
+   
+   curc->move(0, yoff, false);
 }
 
 Pad::~Pad() {
@@ -64,7 +67,7 @@ void Pad::loadFile(string relPath) {
     //string cwd = filesystem::current_path().string();
     //filePath = cwd + "/" + relPath;
 
-    log(HOME_DIR + "/Documents/nsx/log.txt");
+    log(NSX.HOME_DIR + "/Documents/nsx/log.txt");
     
     log("PAD: Opening file: " + filePath);
     string data = readFile(filePath);
@@ -81,17 +84,50 @@ void Pad::loadFile(string relPath) {
     else {
         texts = {""};
         touched = true;
+        log("hererehrerehre");
+    }
+}
+
+void Pad::updateCurcAndScroll() {
+    if (curc->x > (int)texts[curc->y].size()) {
+        curc->x = (int)texts[curc->y].size();
+    }
+    
+    if (scry > curc->y) {
+        scry = curc->y;
+    }
+
+    if (scry < curc->y - (NSX.YMAX - 2)) {
+        scry = curc->y - (NSX.YMAX - 2);
+    }
+
+    scry = min(scry, (int)texts.size() - NSX.YMAX + 1 );
+    scry = max(scry, 0);
+
+
+    if (curc->x < scrx) {
+        scrx -= 1;
+    }
+
+    if (curc->x > scrx + padWinW- 1) {
+        scrx += 1;
+    }
+
+    if ((int)texts[curc->y].size() < scrx) {
+        scrx = max(0, (int)texts[curc->y].size() - padWinW);
     }
 }
 
 void Pad::refresh() {
     //log("START REFRESH");
-    int txtLim = min(YMAX - 1, (int)texts.size());
+    updateCurcAndScroll();
+    
+    int txtLim = min(NSX.YMAX - 1, (int)texts.size());
     for (int j = 0; j < txtLim; j++) {
         int idx = j + scry;
 
         string num = to_string(idx);
-        string numPad (NUM_WIDTH - num.size(), ' ');
+        string numPad (NSX.NUM_WIDTH - num.size(), ' ');
         mvwprintw(numWin, j, 0, "%s%s", num.c_str(), numPad.c_str());
 
         string text = texts[idx];
@@ -99,19 +135,32 @@ void Pad::refresh() {
         if (scrx < text.size()) {
             sub = text.substr(scrx, padWinW);
         }
-
-        string pad(max(0, (padWinW + 1) - (int)sub.size()), ' ');
-        mvwaddnstr(padWin, j, 0, sub.append(pad).c_str(), padWinW);
+        string endPad(max(0, padWinW - (int)sub.size()), ' ');
+        
+        string mode = "norm";
+        int lastI = 0;
+        for (int i = 0; i < text.size(); i++) {
+            char c = text[i];
+            if (mode == "norm") {
+                
+            } 
+        }
+        
+        //wattron(padWin, COLOR_PAIR(1));
+        mvwprintw(padWin, j, 0, "%s%s", sub.c_str(), endPad.c_str());
+        //mvwaddnstr(padWin, j, 0, sub.append(pad).c_str(), padWinW);
+        
+        wattroff(padWin, COLOR_PAIR(1));
     }
 
-    for (int j = txtLim; j < YMAX - 1; j++) {
+    for (int j = txtLim; j < NSX.YMAX - 1; j++) {
         int idx = j + scry;
-        string numPad (NUM_WIDTH, ' ');
+        string numPad (NSX.NUM_WIDTH, ' ');
         mvwprintw(numWin, j, 0, "%s", numPad.c_str());
 
         string pad(padWinW + 1, ' ');
         mvwaddnstr(padWin, j, 0, pad.c_str(), padWinW);
-    }        
+    }
 
     CurPts pos = curc->getBounds();
     
@@ -134,7 +183,7 @@ void Pad::refresh() {
 
         mvwchgat(
             padWin,
-            min(j - scry, YMAX - 2),
+            min(j - scry, NSX.YMAX - 2),
             hStart,
             hLen,
             WA_STANDOUT,
@@ -142,6 +191,7 @@ void Pad::refresh() {
             NULL
         );
     }
+
     
     wrefresh(numWin);
     wrefresh(padWin);
@@ -174,8 +224,9 @@ void Pad::takeInput(string input) {
                 }
                 
                 if (mouseDragging) {
-                    cx = pt.x + scrx;
                     cy = pt.y + scry;
+                    cy = min(cy, (int)texts.size() - 1);
+                    cx = pt.x + scrx;
                     
                     if (!(event.bstate & BUTTON1_PRESSED) && (pt.x != mx || pt.y != my)) {
                         drag = true;
@@ -257,7 +308,7 @@ void Pad::takeInput(string input) {
     }
     else if (input == "KEY_PPAGE") {
         // page up
-        cy = max(cy - (YMAX - 1), 0);
+        cy = max(cy - (NSX.YMAX - 1), 0);
     }
     else if (input == "KEY_DOWN") {
         // down
@@ -269,7 +320,7 @@ void Pad::takeInput(string input) {
     }
     else if (input == "KEY_NPAGE") {
         // page down
-        cy = min(cy + (YMAX - 1), (int)texts.size() - 1);
+        cy = min(cy + (NSX.YMAX - 1), (int)texts.size() - 1);
     }
     else if (input == "KEY_LEFT") {
         cx = max(cx - 1, 0);
@@ -284,9 +335,7 @@ void Pad::takeInput(string input) {
         cx = cx + 5;
     }
     else if (input == "^S") {    
-        string joined = vecJoin(texts, '\n');
-        saveFile(joined, filePath);
-        touched = false;
+        save();
     }
     else if (input == "KEY_BACKSPACE") {
         touched = true;
@@ -301,6 +350,7 @@ void Pad::takeInput(string input) {
         else {
             LoreNode* old = new LoreNode();
             LoreNode* aft = new LoreNode();
+            old->setCur(cx, cy);
             old->add(cy, texts[cy]);
             
             string after = texts[cy].substr(cx, texts[cy].length());
@@ -308,15 +358,39 @@ void Pad::takeInput(string input) {
                 string prevText = texts[cy];
                 string prev = texts[cy].substr(0, cx);
                 
-                int n = 1;
-                while ((prev.length() - n) % 4 != 0 && prev[prev.length() - n] == ' ') {
-                    n += 1;
-                
+                bool empty = true;
+                for (int i = 0; i < prev.length(); i++) {
+                    if (prev[i] != ' ') {
+                        empty = false;
+                        break;
+                    }
                 }
-                prev = prev.substr(0, (int)prev.length() - n);
-                texts[cy] = prev + after;
-                cx -= n;
                 
+                if (empty) {
+                    //loga(
+                    //    to_string((int)prev.length()),
+                    //    to_string((int)prev.length() % 4)
+                    //);
+                    int n = (int)prev.length() % 4;
+                    n = n ? n : 4;
+                    prev = prev.substr(0, cx - n);
+                    cx -= n;
+                }
+                else {
+                    prev = prev.substr(0, cx - 1);
+                    cx -= 1;
+                }
+                
+                //int n = 1;
+                //while ((prev.length() - n) % 4 != 0 && prev[prev.length() - n] == ' ') {
+                //    n += 1;
+                //}
+                
+                //prev = prev.substr(0, (int)prev.length() - n);
+                
+                //cx -= n;
+                
+                texts[cy] = prev + after;
                 aft->add(cy, texts[cy]);
             }
             else if (cy > 0) {
@@ -328,6 +402,7 @@ void Pad::takeInput(string input) {
                 cy -= 1;
             }
             
+            aft->setCur(cx, cy);
             lore.add(old, aft);
         }
     }
@@ -364,11 +439,14 @@ void Pad::takeInput(string input) {
         touched = true;
         LoreNode* old = new LoreNode();
         LoreNode* aft = new LoreNode();
+        old->setCur(cx, cy);
         old->add(cy, texts[cy]);
         texts[cy].insert(cx, string (4, ' '));
-        aft->add(cy, texts[cy]);
-        lore.add(old, aft);
         cx += 4;
+        
+        aft->add(cy, texts[cy]);
+        aft->setCur(cx, cy);
+        lore.add(old, aft); 
     }
     else if (input == "^C") {
         copyClip();
@@ -376,12 +454,13 @@ void Pad::takeInput(string input) {
     else if (input == "^X") {
         copyClip();
         ClearOp op = clearAtCursorBounds();
-        CurPts pts = op.pts;
-        op.aft->add(pts.sy,"");
-        lore.add(op.old, op.aft);
+        //CurPts pts = op.pts;
+        cx = op.pts.sx;
+        cy = op.pts.sy;
         
-        cx = pts.sx;
-        cy = pts.sy;
+        op.aft->add(cy, "");
+        op.aft->setCur(cx, cy);
+        lore.add(op.old, op.aft);
     }
     else if (input == "^V") {
         touched = true;
@@ -398,7 +477,9 @@ void Pad::takeInput(string input) {
             //log("rewinding again");
             state = lore.rewind();
         }
-        placeLore(state.old, state.cur);
+        CurPts pts = placeLore(state.old, state.cur);
+        cx = pts.sx;
+        cy = pts.sy;
     }
     else if (input == "^Y") {
         //log("===== STARTING ADVANCE =====");
@@ -407,7 +488,9 @@ void Pad::takeInput(string input) {
             //log("advancing again");
             lore.advance();
         }
-        placeLore(state.old, state.cur);
+        CurPts pts = placeLore(state.old, state.cur);
+        cx = pts.sx;
+        cy = pts.sy;
     }
     else if (input == "^P") { // test command
         //test
@@ -417,6 +500,7 @@ void Pad::takeInput(string input) {
         CurPts pts = curc->getBounds();
         LoreNode* old = new LoreNode();
         LoreNode* aft = new LoreNode();
+        old->setCur(cx, cy);
         
         bool all = true;
         for (int j = pts.sy; j<= pts.ey; j++) {
@@ -440,8 +524,16 @@ void Pad::takeInput(string input) {
             aft->add(j, texts[j]);
         }
         
+        aft->setCur(cx, cy);
         lore.add(old, aft);
         drag = true;
+    }
+    else if (input == "^F") {
+        NSX.COMMANDER->start("find");
+    }
+    else if (input == "^H") {
+        NSX.COMMANDER->runCommand("findn");
+        return;
     }
     else if (input.size() == 1) {
         touched = true;
@@ -455,36 +547,12 @@ void Pad::takeInput(string input) {
         
         cx += 1;
     }
-
+    
     if (cx > (int)texts[cy].size()) {
         cx = (int)texts[cy].size();
     }
+
     curc->move(cx, cy, drag);
-
-    // Handle scrolling
-    if (scry > cy) {
-        scry = cy;
-    }
-
-    if (scry < cy - (YMAX - 2)) {
-        scry = cy - (YMAX - 2);
-    }
-
-    scry = min(scry, (int)texts.size() - YMAX + 1 );
-    scry = max(scry, 0);
-
-
-    if (cx < scrx) {
-        scrx -= 1;
-    }
-
-    if (cx > scrx + padWinW- 1) {
-        scrx += 1;
-    }
-
-    if ((int)texts[cy].size() < scrx) {
-        scrx = max(0, (int)texts[cy].size() - padWinW);
-    }
 }
 
 void Pad::putNCursor(int x, int y) {
@@ -494,7 +562,7 @@ void Pad::putNCursor(int x, int y) {
 void Pad::setPos(int nx, int ny) {
     x = nx, y = ny;
     mvwin(numWin, y, x);
-    mvwin(padWin, y, x + NUM_WIDTH);
+    mvwin(padWin, y, x + NSX.NUM_WIDTH);
 }
 
 ClearOp Pad::clearAtCursorBounds() {
@@ -502,6 +570,7 @@ ClearOp Pad::clearAtCursorBounds() {
     LoreNode* aft = new LoreNode();
     CurPts pts = curc->getBounds();
     
+    old->setCur(pts.sx, pts.sy);
     old->add(pts.sy, texts[pts.sy]);
     string prev = texts[pts.sy].substr(0, pts.sx);
     
@@ -570,7 +639,9 @@ ClearOp Pad::pasteClip() {
     return op;
 }
 
-void Pad::placeLore(LoreNode* old, LoreNode* cur) {
+CurPts Pad::placeLore(LoreNode* old, LoreNode* cur) {
+    CurPts pts;
+    
     if (old) {
         for (auto it = old->lines.rbegin(); it != old->lines.rend(); ++it) {
             //loga("node:", to_string(old->id), "erasing old: ", to_string(it->first), it->second);
@@ -581,6 +652,98 @@ void Pad::placeLore(LoreNode* old, LoreNode* cur) {
         for (auto it = cur->lines.begin(); it != cur->lines.end(); ++it) {   
             //loga("node:", to_string(cur->id), "adding cur: ", to_string(it->first), it->second);
             texts.insert(texts.begin() + it->first, it->second);
-        } 
+        }
+        //loga("LORE CUR PTS", to_string(cur->cx), to_string(cur->cy)); 
+        pts.sx = cur->cx;
+        pts.ex = cur->cx;
+        pts.sy = cur->cy;
+        pts.ey = cur->cy;
     }
+    else {
+        log("NO CUR LORE NODE means NO CURSOR POINTS!");
+        log("USING curc pts, look into this!");
+        pts.sx = curc->x;
+        pts.ex = curc->x;
+        pts.sy = curc->y;
+        pts.ey = curc->y;
+    }
+    
+    return pts;
+}
+
+void Pad::save() {
+    string joined = vecJoin(texts, '\n');    
+    saveFile(joined, filePath);
+    touched = false;
+    NSX.COMMANDER->setSucc("SAVED " + filePath);
+}
+
+CurPts Pad::find(string s) {
+    loga("finding", s);
+    curFind = s;
+    CurPts pts;
+    pts.sx = -1;
+    pts.sy = -1;
+    int n = 0;
+    
+    int fy = curc->y;
+    while (true) {
+        int fx = texts[fy].find(curFind);
+        if (fx != -1) {
+            if (n == 0) {
+                pts.sx = fx;
+                pts.sy = fy;
+            }
+            n++;
+        }
+        
+        fy += 1;
+        if (fy >= texts.size()) {
+            fy = 0;
+        }
+        if (fy == curc->y) {
+            break;
+        }
+    } 
+    
+    if (n == 0) {
+        NSX.COMMANDER->setSucc("NO INSTANCES OF \"" + curFind + "\"");
+    }
+    else {
+        NSX.COMMANDER->setSucc("FOUND " + to_string(n) + " INSTANCES OF \"" + curFind + "\"");
+    }
+    
+    return pts;
+}
+
+CurPts Pad::findn() {
+    CurPts pts;
+    pts.sx = -1;
+    pts.sy = -1;
+    
+    int fy = curc->y;
+    while (true) {
+        fy += 1;
+        if (fy >= texts.size()) {
+            fy = 0;
+        }
+        if (fy == curc->y) {
+            break;
+        }
+        int fx = texts[fy].find(curFind);
+        if (fx != -1) {
+            log("found");
+            pts.sx = fx;
+            pts.sy = fy;
+            break;
+        }
+    }
+    
+    if (pts.sx == -1 || pts.sy == -1) {
+        NSX.COMMANDER->setSucc("NO INSTANCES OF \"" + curFind + "\"");
+    }
+    else {
+        NSX.COMMANDER->setSucc("FOUND NEXT \"" + curFind + "\"");
+    }
+    return pts;
 }

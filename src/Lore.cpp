@@ -1,13 +1,17 @@
 #include "Lore.h"
 
-#include "globals.h"
+//#include "globals.h"
 #include "log.h"
 #include "utils.h"
+
+#include "NSX.h"
 
 LoreNode::LoreNode() {
     prev = nullptr;
     next = nullptr;
-    id = NEXT_LORE_IDX++;
+    cx = -1;
+    cy = -1;
+    id = NSX.NEXT_LORE_IDX++;
     //loga("CREATING NODE", to_string(id));
 }
 
@@ -23,6 +27,11 @@ void LoreNode::add(int line, string text) {
     //);
     pair<int, string> p(line, text);
     lines.insert(p);
+}
+
+void LoreNode::setCur(int x, int y) {
+    cx = x;
+    cy = y;
 }
 
 Lore::Lore() {

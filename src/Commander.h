@@ -1,3 +1,6 @@
+#ifndef COMMANDER_H
+#define COMMANDER_H
+
 #include <ncurses.h>
 #include <vector>
 #include <string>
@@ -5,13 +8,21 @@
 
 using namespace std;
 
+struct CMDRes {
+    bool pass;
+    string res;
+};
+
 class Commander {
 public:
     Commander(int nx, int ny, int nw);
     ~Commander();
     
     void reset();
-    void setResult(string res);
+    void start(string c);
+    void runCommand();
+    void runCommand(string c);
+    void setSucc(string res);
     void setError(string error);
     void updateT();
     void refresh(string nleft, string nstat);
@@ -28,3 +39,5 @@ public:
 private:
     WINDOW* win;
 };
+
+#endif
