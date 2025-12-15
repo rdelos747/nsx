@@ -27,6 +27,7 @@ public:
     void loadFile(string relPath);
     void putNCursor(int x, int y);
     void setPos(int nx, int ny);
+    void setSize(int nw, int nh);
     CurPts placeLore(LoreNode* old, LoreNode* cur);
     void save();
     CurPts find(string s);

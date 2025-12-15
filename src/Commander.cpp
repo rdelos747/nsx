@@ -4,10 +4,10 @@
 #include "NSX.h"
 
 Commander::Commander(int nx, int ny, int nw) {
-    x = x, ny = ny, w = nw;
+    x = nx, y = ny, w = nw;
     commanding = false;
     win = newwin(1, w, y, x);
-    reset();
+    //reset();
 }
 
 Commander::~Commander() {
@@ -18,6 +18,11 @@ Commander::~Commander() {
 void Commander::setPos(int nx, int ny) {
     x = nx, y = ny;
     mvwin(win, y, x);
+}
+
+void Commander::setSize(int nw) {
+    w = nw;
+    wresize(win, 1, w);
 }
 
 void Commander::reset() {

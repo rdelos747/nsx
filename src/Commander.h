@@ -28,6 +28,7 @@ public:
     void refresh(string nleft, string nstat);
     void takeInput(string input);
     void setPos(int nx, int ny);
+    void setSize(int nw);
     
     int x, y;
     int w;

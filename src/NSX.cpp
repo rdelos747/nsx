@@ -54,8 +54,10 @@ void Nsx::start(StartConfig c) {
     */
     DIR_WIN = newwin(YMAX - 1, DIR_WIDTH, 1, 0);
     COMMANDER = new Commander(0, 0, XMAX - 1);
+    //COMMANDER = new Commander();
     
     CURP = new Pad(DIR_WIDTH, 1, XMAX - DIR_WIDTH, YMAX - 1, c.yoffset);
+    //CURP = new Pad(c.yoffset);
     CURP->loadFile(c.path);
     CURP->putNCursor(0, 0);
     PADS.push_back(CURP);
@@ -84,7 +86,10 @@ void Nsx::run() {
         string input(keyname(ch));
         LAST_INPUT = input;
         
-        if (input == "^Q") {
+        if (input == "KEY_RESIZE") {
+            layoutChanged = true;
+        }
+        else if (input == "^Q") {
             //running = false;
             tryQuit();
         }
@@ -130,6 +135,14 @@ void Nsx::run() {
 }
 
 void Nsx::updateLayout() {
+    log("UPDATING LAYOUT");
+    //loga("prev size", to_string(XMAX), to_string(YMAX));
+    getmaxyx(stdscr, YMAX, XMAX);
+    //loga("now size", to_string(XMAX), to_string(YMAX));
+    
+    wresize(DIR_WIN, YMAX - 1, DIR_WIDTH);
+    COMMANDER->setSize(XMAX - 1);
+    
     clear();
     refresh();
     if (CMD_BOT) {
@@ -140,6 +153,7 @@ void Nsx::updateLayout() {
             // eachother. need to place them next
             // to eachother if split view
             p->setPos(DIR_WIDTH, 0);
+            p->setSize(XMAX - DIR_WIDTH, YMAX - 1);
         }
     }
     else {
@@ -150,6 +164,7 @@ void Nsx::updateLayout() {
             // eachother. need to place them next
             // to eachother if split view
             p->setPos(DIR_WIDTH, 1);
+            p->setSize(XMAX - DIR_WIDTH, YMAX - 1);
         }
     }
 

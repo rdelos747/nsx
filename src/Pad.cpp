@@ -565,6 +565,12 @@ void Pad::setPos(int nx, int ny) {
     mvwin(padWin, y, x + NSX.NUM_WIDTH);
 }
 
+void Pad::setSize(int nw, int nh) {
+    w = nw, h = nh;
+    wresize(numWin, h, NSX.NUM_WIDTH);
+    wresize(padWin, h, w - NSX.NUM_WIDTH);
+}
+
 ClearOp Pad::clearAtCursorBounds() {
     LoreNode* old = new LoreNode();
     LoreNode* aft = new LoreNode();
