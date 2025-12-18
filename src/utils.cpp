@@ -11,6 +11,10 @@
 
 using namespace std;
 
+regex R_SCHR = regex("[^\\w\\s]");
+regex R_NUMB = regex("[0-9]");
+regex R_NUMB_BEGIN = regex("\\w");
+
 string boolstr(bool b) {
     return b ? "true" : "false";
 }

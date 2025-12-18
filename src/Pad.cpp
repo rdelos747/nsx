@@ -1,6 +1,7 @@
 #include "clip.h"
 #include <filesystem>
 #include <ncurses.h>
+#include <regex>
 
 //#include "globals.h"
 #include "log.h"
@@ -121,6 +122,7 @@ void Pad::updateCurcAndScroll() {
 void Pad::refresh() {
     //log("START REFRESH");
     updateCurcAndScroll();
+    wclear(padWin);
     
     int txtLim = min(NSX.YMAX - 1, (int)texts.size());
     for (int j = 0; j < txtLim; j++) {
@@ -131,26 +133,86 @@ void Pad::refresh() {
         mvwprintw(numWin, j, 0, "%s%s", num.c_str(), numPad.c_str());
 
         string text = texts[idx];
-        string sub;
-        if (scrx < text.size()) {
-            sub = text.substr(scrx, padWinW);
-        }
-        string endPad(max(0, padWinW - (int)sub.size()), ' ');
         
-        string mode = "norm";
-        int lastI = 0;
+        T_MODE mode = T_NORM;
+        T_MODE lMode = T_NORM;
+        int startI = scrx;
+
         for (int i = 0; i < text.size(); i++) {
-            char c = text[i];
-            if (mode == "norm") {
+            string c = string(1, text[i]); 
+            string pc = i > 0 ? string(1, text[i - 1]) : "";
+            
+             if (mode != T_QUOT && c == "\"") {
+                mode = T_QUOT;
+                //loga(to_string(i), to_string(mode));
+            }
+            else if (mode == T_QUOT && pc == "\"" && i > startI + 1) {
+                mode = T_NORM;
+                //loga(to_string(i), "turning off"));
+            }
+            else if (mode != T_QUOT && mode != T_COMM && text.substr(i, 2) == "//") {
+                mode = T_COMM;
+            }
+            
+            if (mode != T_COMM && mode != T_QUOT) {
+                if (regex_match(c, R_SCHR)) {
+                    mode = T_SCHR;
+                }
+                else if (mode == T_SCHR && !regex_match(c, R_SCHR)) {
+                    mode = T_NORM;
+                }
+                if (
+                    mode != T_NUMB && 
+                    regex_match(c, R_NUMB) && 
+                    !regex_match(pc, R_NUMB_BEGIN)
+                ) {
+                    int x1 = 20; 
+                    mode = T_NUMB;
+                }
+                else if (mode == T_NUMB && !regex_match(c, R_NUMB)) {
+                    mode = T_NORM;
+                }
+            }
+                        
+            if (i >= scrx && (lMode != mode || i == text.size() - 1) || i - scrx == padWinW) {
+                //if (i == text.size() - 1) {
+                //    loga(to_string(idx), to_string(i), string(1, c));
+                //}
                 
-            } 
+                wattron(padWin, COLOR_PAIR(lMode));
+
+                string ps = text.substr(startI, i - startI + 1);
+                mvwaddnstr(padWin, j, startI - scrx, ps.c_str(), padWinW - (startI - scrx));
+
+                startI = i;
+            }
+            
+            lMode = mode;
         }
+
+        /*
+        string endPad(
+            max(
+                0,
+                padWinW - ((int)text.size() - scrx)
+            ),
+            '+'
+        );
+        //mvwprintw(padWin, j, startI + 1, "%s", endPad.c_str());
+        mvwaddnstr(
+            padWin,
+            j,
+            startI == 0 ? 0 : startI + 1,
+            endPad.c_str(),
+            padWinW
+        );
+        */
         
         //wattron(padWin, COLOR_PAIR(1));
-        mvwprintw(padWin, j, 0, "%s%s", sub.c_str(), endPad.c_str());
+        //mvwprintw(padWin, j, 0, "%s%s", sub.c_str(), endPad.c_str());
         //mvwaddnstr(padWin, j, 0, sub.append(pad).c_str(), padWinW);
         
-        wattroff(padWin, COLOR_PAIR(1));
+        //wattroff(padWin, COLOR_PAIR(1));
     }
 
     for (int j = txtLim; j < NSX.YMAX - 1; j++) {
@@ -441,8 +503,9 @@ void Pad::takeInput(string input) {
         LoreNode* aft = new LoreNode();
         old->setCur(cx, cy);
         old->add(cy, texts[cy]);
-        texts[cy].insert(cx, string (4, ' '));
-        cx += 4;
+        int dif = 4 - (cx % 4);
+        texts[cy].insert(cx, string (dif, ' '));
+        cx += dif;
         
         aft->add(cy, texts[cy]);
         aft->setCur(cx, cy);

@@ -4,6 +4,7 @@
 #include <curses.h>
 #include <string>
 #include <vector>
+#include <regex>
 #include <sstream>
 #include <type_traits>
 #include <typeinfo>
@@ -11,6 +12,10 @@
 #include "log.h"
 
 using namespace std;
+
+extern regex R_SCHR;
+extern regex R_NUMB;
+extern regex R_NUMB_BEGIN;
 
 string boolstr(bool b);
 

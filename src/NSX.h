@@ -16,6 +16,14 @@
 
 using namespace std;
 
+enum T_MODE {
+    T_NORM = 1,
+    T_COMM,
+    T_QUOT,
+    T_SCHR,
+    T_NUMB
+};
+
 struct StartConfig {
     string path = "";
     int yoffset = 0;

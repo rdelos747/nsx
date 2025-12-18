@@ -32,7 +32,14 @@ void Nsx::start(StartConfig c) {
     }
     
     start_color();
-    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(T_NORM, COLOR_WHITE, COLOR_BLACK);
+    init_pair(T_COMM, COLOR_RED, COLOR_BLACK);
+    init_pair(T_QUOT, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(T_SCHR, COLOR_BLUE, COLOR_BLACK);
+    init_pair(T_NUMB, COLOR_CYAN, COLOR_BLACK);
+    
+    // testing
+    int abc8000 = 90000 + 2;
     
     loga("STARTUP: ncurses configured");
     
