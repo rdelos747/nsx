@@ -16,7 +16,7 @@ pacman -S ncurses
 Note, you must also have the `clip` submodule installed.
 
 1. `cd <my favorite path>/nsx/build`
-need to rebuild your makefile.
+2. `cmake ..` needed to rebuild your makefile.
 3. `make`
 
 
@@ -25,4 +25,18 @@ need to rebuild your makefile.
 2. `nsx` opens a blank instance of `nsx` in the current directory.
 3. `nsx <myFavoriteFileName.myFavoriteFileExtension>` opens a file with `nsx`. If the file doesn't exist, `nsx` will create it on save.
 
-## about nsx
+## Current Features
+- Basic text editing, saving/ loading files, new files
+- Token highlighting (comments, special chars, etc)
+- Scrolling and mouse support
+
+## TODO
+- <Feature> Block comment and quote highlighting.
+- <Feature> Collapsable directory view
+- <Feature> Multiple tabs
+- <Bug> Seg fault when saving at small terminal size
+- <Feature> Color config options
+- <Feature> Settings per filetype
+
+## Considerations
+- Tabs are currently set to one space. The tab key currently inputs space chars until the next tab point, max 4 spaces. I don't like to use tabs in my code, so this isn't an issue for me.

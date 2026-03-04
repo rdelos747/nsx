@@ -31,6 +31,7 @@ Pad::Pad(int nx, int ny, int nw, int nh, int yoff) :
    // log(s);
    
    curc->move(0, yoff, false);
+   log(to_string(TABSIZE));
 }
 
 Pad::~Pad() {
@@ -142,7 +143,11 @@ void Pad::refresh() {
             string c = string(1, text[i]); 
             string pc = i > 0 ? string(1, text[i - 1]) : "";
             
-             if (mode != T_QUOT && c == "\"") {
+            //if (text[i] == '\t') {
+            //    text[i] = '%';
+            //}
+            
+            if (mode != T_QUOT && c == "\"") {
                 mode = T_QUOT;
                 //loga(to_string(i), to_string(mode));
             }

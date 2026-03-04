@@ -27,6 +27,8 @@ void Nsx::start(StartConfig c) {
     mouseinterval(0);
     printf("\033[?1003h\n");
     
+    set_tabsize(1);
+    
     if (has_colors() == false) {
         log("NO COLOR!!!!!!!");
     }
