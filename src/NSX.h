@@ -45,7 +45,7 @@ public:
     bool CMD_BOT = true;
     bool SHOW_NUM = true;
     int DIR_WIDTH = 10;
-    int NUM_WIDTH = 4;
+    int NUM_WIDTH = 6;
     
     // global helper values
     int NEXT_LORE_IDX;
