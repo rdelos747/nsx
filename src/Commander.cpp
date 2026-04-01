@@ -7,6 +7,8 @@ Commander::Commander(int nx, int ny, int nw) {
     x = nx, y = ny, w = nw;
     commanding = false;
     win = newwin(1, w, y, x);
+    
+    wbkgd(win, COLOR_PAIR(T_BK) | ' ');
     //reset();
 }
 
@@ -56,7 +58,7 @@ void Commander::setError(string error) {
 
 void Commander::refresh(string nleft, string ndet) {
     werase(win);
-    wattrset(win, A_STANDOUT);
+    //wattrset(win, A_STANDOUT);
     
     string left;
     if (commanding || resultT > 0) {
@@ -66,10 +68,8 @@ void Commander::refresh(string nleft, string ndet) {
         left = nleft;
     }
     
-    //log(to_string(w));
-    
-    string middle (w - 3 - left.length() - ndet.length(), ' ');
-    mvwprintw(win, 0, 0, "%s %s %s", left.c_str(), middle.c_str(), ndet.c_str());
+    mvwprintw(win, 0, 0, "%s", left.c_str());
+    mvwprintw(win, 0, w - ndet.length(), "%s", ndet.c_str());
     
     int curMode = A_STANDOUT;
     if (commanding) {
@@ -77,7 +77,7 @@ void Commander::refresh(string nleft, string ndet) {
     }
     
     mvwchgat(win, 0, cx + 5, 1, curMode, 0, NULL);
-        
+    
     wrefresh(win);
 }
 

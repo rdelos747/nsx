@@ -21,7 +21,8 @@ enum T_MODE {
     T_COMM,
     T_QUOT,
     T_SCHR,
-    T_NUMB
+    T_NUMB,
+    T_BK
 };
 
 struct StartConfig {

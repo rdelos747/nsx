@@ -39,6 +39,7 @@ void Nsx::start(StartConfig c) {
     init_pair(T_QUOT, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(T_SCHR, COLOR_BLUE, COLOR_BLACK);
     init_pair(T_NUMB, COLOR_CYAN, COLOR_BLACK);
+    init_pair(T_BK, COLOR_BLACK, COLOR_WHITE);
     
     // testing
     int abc8000 = 90000 + 2;
@@ -138,6 +139,7 @@ void Nsx::run() {
             },
             ' '
         );
+        
         COMMANDER->refresh(fname, LAST_INPUT + " " + stat);
         CURP->refresh();
     }
