@@ -15,7 +15,8 @@ struct CMDRes {
 
 class Commander {
 public:
-    Commander(int nx, int ny, int nw);
+    //Commander(int nx, int ny, int nw);
+    Commander();
     ~Commander();
     
     void reset();

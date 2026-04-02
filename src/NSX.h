@@ -12,6 +12,7 @@
 #include "utils.h"
 
 #include "Commander.h"
+#include "Navigator.h"
 #include "Pad.h"
 
 using namespace std;
@@ -45,8 +46,8 @@ public:
     int XMAX, YMAX;
     bool CMD_BOT = true;
     bool SHOW_NUM = true;
-    int DIR_WIDTH = 10;
-    int NUM_WIDTH = 6;
+    int DIR_W = 10;
+    int NUM_W = 6;
     
     // global helper values
     int NEXT_LORE_IDX;
@@ -57,7 +58,8 @@ public:
     Commander* COMMANDER;
     vector<Pad*> PADS;
     Pad* CURP;
-    WINDOW* DIR_WIN;
+    //WINDOW* DIR_WIN;
+    Navigator* NAV;
 
 private:
     bool running;

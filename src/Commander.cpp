@@ -3,10 +3,12 @@
 #include "Commander.h"
 #include "NSX.h"
 
-Commander::Commander(int nx, int ny, int nw) {
-    x = nx, y = ny, w = nw;
+//Commander::Commander(int nx, int ny, int nw) {
+Commander::Commander() {
+    //x = nx, y = ny, w = nw;
     commanding = false;
-    win = newwin(1, w, y, x);
+    //win = newwin(1, w, y, x);
+    win = newwin(1, 1, 1, 1);
     
     wbkgd(win, COLOR_PAIR(T_BK) | ' ');
     //reset();

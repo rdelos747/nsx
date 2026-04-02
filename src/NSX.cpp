@@ -11,6 +11,7 @@ Nsx::~Nsx() {}
 void Nsx::start(StartConfig c) {
     clearLog();
     log("======== NSX START ========");
+    loga("STARTUP:", getTime());
     
     /*
     Configure ncurses
@@ -49,9 +50,6 @@ void Nsx::start(StartConfig c) {
     /*
     Startup file
     */
-    string cwd = filesystem::current_path().string();
-    loga("STARTUP:", getTime(), ", CWD:" ,cwd);
-    
     if (c.path == "") {
         log("STARTUP: No filename provided, using blank file.");
     }
@@ -62,11 +60,11 @@ void Nsx::start(StartConfig c) {
     /*
     Create ncurses windows
     */
-    DIR_WIN = newwin(YMAX - 1, DIR_WIDTH, 1, 0);
-    COMMANDER = new Commander(0, 0, XMAX - 1);
-    //COMMANDER = new Commander();
+    NAV = new Navigator();
+    //COMMANDER = new Commander(0, 0, XMAX - 1);
+    COMMANDER = new Commander();
     
-    CURP = new Pad(DIR_WIDTH, 1, XMAX - DIR_WIDTH, YMAX - 1, c.yoffset);
+    CURP = new Pad(DIR_W, 1, XMAX - DIR_W, YMAX - 1, c.yoffset);
     //CURP = new Pad(c.yoffset);
     CURP->loadFile(c.path);
     CURP->putNCursor(0, 0);
@@ -80,6 +78,7 @@ void Nsx::start(StartConfig c) {
 void Nsx::finish() {
     log("===== Cleaning up NSX =====");
     delete COMMANDER;
+    delete NAV;
     for (const Pad* p: PADS) {
         delete p;
     }
@@ -141,6 +140,7 @@ void Nsx::run() {
         );
         
         COMMANDER->refresh(fname, LAST_INPUT + " " + stat);
+        NAV->refresh();
         CURP->refresh();
     }
 }
@@ -151,36 +151,40 @@ void Nsx::updateLayout() {
     getmaxyx(stdscr, YMAX, XMAX);
     //loga("now size", to_string(XMAX), to_string(YMAX));
     
-    wresize(DIR_WIN, YMAX - 1, DIR_WIDTH);
+    //wresize(DIR_WIN, YMAX - 1, DIR_WIDTH);
+    
     COMMANDER->setSize(XMAX - 1);
+    NAV->setSize(DIR_W, YMAX - 1);
     
     clear();
     refresh();
     if (CMD_BOT) {
         COMMANDER->setPos(0, YMAX - 1);
-        mvwin(DIR_WIN, 0, 0);
+        NAV->setPos(0, 0);
+        //mvwin(DIR_WIN, 0, 0);
         for (Pad* p: PADS) {
             // todo: this will place pads ontop of
             // eachother. need to place them next
             // to eachother if split view
-            p->setPos(DIR_WIDTH, 0);
-            p->setSize(XMAX - DIR_WIDTH, YMAX - 1);
+            p->setPos(DIR_W, 0);
+            p->setSize(XMAX - DIR_W, YMAX - 1);
         }
     }
     else {
         COMMANDER->setPos(0, 0);
-        mvwin(DIR_WIN, 1, 0);
+        NAV->setPos(0, 1);
+        //mvwin(DIR_WIN, 1, 0);
         for (Pad* p: PADS) {
             // todo: this will place pads ontop of
             // eachother. need to place them next
             // to eachother if split view
-            p->setPos(DIR_WIDTH, 1);
-            p->setSize(XMAX - DIR_WIDTH, YMAX - 1);
+            p->setPos(DIR_W, 1);
+            p->setSize(XMAX - DIR_W, YMAX - 1);
         }
     }
 
-    mvwvline(DIR_WIN, 0, 9, 0, YMAX - 1);
-    wrefresh(DIR_WIN);
+    //mvwvline(DIR_WIN, 0, 9, 0, YMAX - 1);
+    //wrefresh(DIR_WIN);
 }
 
 void Nsx::tryQuit() {

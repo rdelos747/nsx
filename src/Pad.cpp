@@ -19,11 +19,11 @@ Pad::Pad(int nx, int ny, int nw, int nh, int yoff) :
     mouseDragging = 0;
     scrx = 0, scry = 0;
     curc = new Cursor();
-    padWinW = w - NSX.NUM_WIDTH - 1;
+    padWinW = w - NSX.NUM_W - 1;
     texts = {""};
     touched = false;
-    numWin = newwin(h, NSX.NUM_WIDTH, y, x);
-    padWin = newwin(h, w - NSX.NUM_WIDTH, y, x + NSX.NUM_WIDTH);
+    numWin = newwin(h, NSX.NUM_W, y, x);
+    padWin = newwin(h, w - NSX.NUM_W, y, x + NSX.NUM_W);
     scrollok(padWin, true);
     
    // string s;
@@ -80,7 +80,7 @@ void Pad::loadFile(string relPath) {
         string homeDir = getenv("HOME");
         saveFile(
             data,
-            homeDir + "/Documents/nsx/backups/backup-" + getTime() + "-" + fileName
+            homeDir + "/Documents/nsx/_backups/backup-" + getTime() + "-" + fileName
         );
     }
     else {
@@ -130,7 +130,7 @@ void Pad::refresh() {
         int idx = j + scry;
 
         string num = to_string(idx);
-        string numPad (NSX.NUM_WIDTH - num.size(), ' ');
+        string numPad (NSX.NUM_W - num.size(), ' ');
         mvwprintw(numWin, j, 0, "%s%s", num.c_str(), numPad.c_str());
 
         string text = texts[idx];
@@ -222,7 +222,7 @@ void Pad::refresh() {
 
     for (int j = txtLim; j < NSX.YMAX - 1; j++) {
         int idx = j + scry;
-        string numPad (NSX.NUM_WIDTH, ' ');
+        string numPad (NSX.NUM_W, ' ');
         mvwprintw(numWin, j, 0, "%s", numPad.c_str());
 
         string pad(padWinW + 1, ' ');
@@ -630,13 +630,13 @@ void Pad::putNCursor(int x, int y) {
 void Pad::setPos(int nx, int ny) {
     x = nx, y = ny;
     mvwin(numWin, y, x);
-    mvwin(padWin, y, x + NSX.NUM_WIDTH);
+    mvwin(padWin, y, x + NSX.NUM_W);
 }
 
 void Pad::setSize(int nw, int nh) {
     w = nw, h = nh;
-    wresize(numWin, h, NSX.NUM_WIDTH);
-    wresize(padWin, h, w - NSX.NUM_WIDTH);
+    wresize(numWin, h, NSX.NUM_W);
+    wresize(padWin, h, w - NSX.NUM_W);
 }
 
 ClearOp Pad::clearAtCursorBounds() {
