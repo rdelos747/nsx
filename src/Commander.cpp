@@ -124,8 +124,11 @@ void Commander::runCommand() {
     }
     
     if (cmds[0] == "save") {
-        NSX.CURP->save();
-        //setSucc("SAVED " + NSX.CURP->fileName);
+        if (cmds.size() == 2) {
+            start("FNAME " + cmds[1] + " Are you sure you want to save? y/n");
+        } else { 
+            NSX.CURP->save();
+        } 
         return;
     }
     
@@ -142,6 +145,19 @@ void Commander::runCommand() {
         }
         else {
             setSucc("QUIT CANCELLED");
+        }
+        return;
+    }
+    
+    if (cmds[0] == "FNAME") {
+        string r = cmds[cmds.size() - 1];
+        loga("running new filename check, got", r);
+        if (r == "y" || r == "yes") {
+            //NSX.forceQuit();
+            NSX.CURP->save(cmds[1]);
+        }
+        else {
+            setSucc("SAVE CANCELLED");
         }
         return;
     }
@@ -170,6 +186,13 @@ void Commander::runCommand() {
             NSX.CURP->curc->move(pts.sx, pts.sy, false);
         }
         return; 
+    }
+    
+    if (cmds[0] == "open") {
+        if (cmds.size() < 2) {
+            //setSucc("NO FILE SPECIFIED :(");
+            return;
+        }
     }
     
     setError("I don't recognize this command :(");

@@ -41,6 +41,10 @@ vector<string> split(string input, char delim) {
     return out;
 }
 
+string last(const vector<string>& input) {
+    return input[input.size() - 1];
+}
+
 string readFile(string path) {
     size_t readSize = size_t(4096);
     ifstream stream = ifstream(path);

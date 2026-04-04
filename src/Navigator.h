@@ -5,6 +5,7 @@
 #include <ncurses.h>
 #include <panel.h>
 #include <string>
+#include <vector>
 
 #include "utils.h"
 
@@ -17,6 +18,7 @@ public:
     
     void refresh();
     void takeInput(string input);
+    void readDir();
     
     void setPos(int nx, int ny);
     void setSize(int nw, int nh);
@@ -25,7 +27,7 @@ public:
     int w, h;
     int cy;
     string cwd;
-    
+    vector<string> items;
 
 private:
     WINDOW* win;

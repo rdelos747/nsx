@@ -3,7 +3,7 @@
 Navigator::Navigator() {
     win = newwin(1, 1, 1, 1);
     
-    cwd = filesystem::current_path().string();
+    readDir();
     loga("STARTUP: NAVIAGTOR", cwd);
 }
 
@@ -24,10 +24,30 @@ void Navigator::setSize(int nw, int nh) {
 
 void Navigator::refresh() {
     werase(win);
+    
+    string d = last(split(cwd, '/'));
+    wattrset(win, A_STANDOUT);
+    mvwprintw(win, 0, 0, "%s", d.c_str());
+    wattroff(win, A_STANDOUT);
+    
+     for (int i = 0; i < items.size(); i++) {
+        string s  = last(split(items[i], '/'));
+        mvwprintw(win, i + 2, 0, "%s", s.c_str());
+    }
+    
     mvwvline(win, 0, w - 1, 0, h);
     wrefresh(win);
 }
 
 void Navigator::takeInput(string input) {
+}
 
+void Navigator::readDir() {
+    cwd = filesystem::current_path().string();
+    for (const auto & entry : filesystem::directory_iterator(cwd)) {
+        ///log(last(split(entry.path(), '/')));
+        
+        string s = entry.path();
+        items.push_back(s);
+    }
 }

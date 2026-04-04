@@ -23,6 +23,8 @@ string vecJoin(const vector<string>& input, char delim);
 
 vector<string> split(string input, char delim);
 
+string last(const vector<string>& input);
+
 string readFile(string path);
 
 string getTime();

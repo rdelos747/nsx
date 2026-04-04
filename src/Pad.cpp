@@ -21,7 +21,7 @@ Pad::Pad(int nx, int ny, int nw, int nh, int yoff) :
     curc = new Cursor();
     padWinW = w - NSX.NUM_W - 1;
     texts = {""};
-    touched = false;
+    touched = true;
     numWin = newwin(h, NSX.NUM_W, y, x);
     padWin = newwin(h, w - NSX.NUM_W, y, x + NSX.NUM_W);
     scrollok(padWin, true);
@@ -65,9 +65,6 @@ void Pad::loadFile(string relPath) {
         string cwd = filesystem::current_path().string();
         filePath = cwd + "/" + relPath;
     }
-    
-    //string cwd = filesystem::current_path().string();
-    //filePath = cwd + "/" + relPath;
 
     log(NSX.HOME_DIR + "/Documents/nsx/log.txt");
     
@@ -82,11 +79,6 @@ void Pad::loadFile(string relPath) {
             data,
             homeDir + "/Documents/nsx/_backups/backup-" + getTime() + "-" + fileName
         );
-    }
-    else {
-        texts = {""};
-        touched = true;
-        log("hererehrerehre");
     }
 }
 
@@ -745,11 +737,24 @@ CurPts Pad::placeLore(LoreNode* old, LoreNode* cur) {
     return pts;
 }
 
+void Pad::save(string fname) {
+    //fileName = fname;
+    loadFile(fname);
+    save();
+}
+
 void Pad::save() {
-    string joined = vecJoin(texts, '\n');    
-    saveFile(joined, filePath);
-    touched = false;
-    NSX.COMMANDER->setSucc("SAVED " + filePath);
+    if (fileName != "") {
+        string joined = vecJoin(texts, '\n');
+        loga("here 1");
+        saveFile(joined, filePath);
+        loga("here 2");
+        touched = false;
+        NSX.COMMANDER->setSucc("SAVED " + filePath); 
+    }
+    else {
+        NSX.COMMANDER->setSucc("FILE HAS NO NAME :(");
+    }
 }
 
 CurPts Pad::find(string s) {

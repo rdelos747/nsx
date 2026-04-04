@@ -30,6 +30,7 @@ public:
     void setSize(int nw, int nh);
     CurPts placeLore(LoreNode* old, LoreNode* cur);
     void save();
+    void save(string fname);
     CurPts find(string s);
     CurPts findn();
 
