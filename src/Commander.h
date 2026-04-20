@@ -26,7 +26,7 @@ public:
     void setSucc(string res);
     void setError(string error);
     void updateT();
-    void refresh(string nleft, string nstat);
+    void refresh(int tabi, int tabm, string nleft, string nstat);
     void takeInput(string input);
     void setPos(int nx, int ny);
     void setSize(int nw);

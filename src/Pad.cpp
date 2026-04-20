@@ -46,7 +46,7 @@ Pad::~Pad() {
     delwin(padWin);
 }
 
-void Pad::loadFile(string relPath) {
+void Pad::loadFile(string relPath, string cwd) {
     if (relPath == "") {
         fileName = "";
     }
@@ -62,7 +62,7 @@ void Pad::loadFile(string relPath) {
     }
     else if (fpath.is_relative()) {
         log("relative");
-        string cwd = filesystem::current_path().string();
+        //string cwd = filesystem::current_path().string();
         filePath = cwd + "/" + relPath;
     }
 
@@ -739,7 +739,7 @@ CurPts Pad::placeLore(LoreNode* old, LoreNode* cur) {
 
 void Pad::save(string fname) {
     //fileName = fname;
-    loadFile(fname);
+    loadFile(fname, NSX.NAV->cwd);
     save();
 }
 

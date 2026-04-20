@@ -24,7 +24,7 @@ public:
 
     void refresh();
     void takeInput(string input);
-    void loadFile(string relPath);
+    void loadFile(string relPath, string cwd);
     void putNCursor(int x, int y);
     void setPos(int nx, int ny);
     void setSize(int nw, int nh);

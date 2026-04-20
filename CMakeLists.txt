@@ -7,6 +7,9 @@ project(nsx)
 # Set the output directory for the executable
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Set the C++ version
+set(CMAKE_CXX_STANDARD 20)
+
 # Set the C++ compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -w")
 

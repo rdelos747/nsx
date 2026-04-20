@@ -18,7 +18,8 @@ public:
     
     void refresh();
     void takeInput(string input);
-    void readDir();
+    void setCWD(string dp);
+    void setCWDFromFile(string fp);
     
     void setPos(int nx, int ny);
     void setSize(int nw, int nh);

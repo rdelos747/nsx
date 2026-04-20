@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-//#include "globals.h"
 #include "log.h"
 #include "utils.h"
 
@@ -29,6 +28,7 @@ enum T_MODE {
 struct StartConfig {
     string path = "";
     int yoffset = 0;
+    bool readonly = false;
 };
 
 class Nsx {
@@ -39,6 +39,7 @@ public:
     void finish();
     void updateLayout();
     void run();
+    void openFile(string path, int yoffset);
     void tryQuit();
     void forceQuit();
     
@@ -58,6 +59,7 @@ public:
     Commander* COMMANDER;
     vector<Pad*> PADS;
     Pad* CURP;
+    int PAD_IDX;
     //WINDOW* DIR_WIN;
     Navigator* NAV;
 

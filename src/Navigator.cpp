@@ -3,9 +3,11 @@
 Navigator::Navigator() {
     win = newwin(1, 1, 1, 1);
     
-    readDir();
-    loga("STARTUP: NAVIAGTOR", cwd);
+    //readDir();
+    //loga("STARTUP: NAVIAGTOR", cwd);
 }
+
+//test
 
 Navigator::~Navigator() {
     log("deleting navigator");
@@ -42,12 +44,24 @@ void Navigator::refresh() {
 void Navigator::takeInput(string input) {
 }
 
-void Navigator::readDir() {
-    cwd = filesystem::current_path().string();
+void Navigator::setCWD(string dp) {
+    //cwd = filesystem::current_path().string();
+    loga("NAVIGATOR SET CWD", dp);
+    cwd = dp;
+    //filesystem::path p = dp;
+    //filesystem::directoryPath
+    items.clear();
     for (const auto & entry : filesystem::directory_iterator(cwd)) {
         ///log(last(split(entry.path(), '/')));
         
         string s = entry.path();
         items.push_back(s);
     }
+}
+
+void Navigator::setCWDFromFile(string fp) {
+    filesystem::path p = fp;
+    filesystem::path d = p.parent_path();
+    
+    setCWD(d.string());
 }

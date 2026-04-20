@@ -1,17 +1,14 @@
-#include "utils.h"
+#include <format>
 
 #include "Commander.h"
 #include "NSX.h"
+#include "utils.h"
 
-//Commander::Commander(int nx, int ny, int nw) {
 Commander::Commander() {
-    //x = nx, y = ny, w = nw;
     commanding = false;
-    //win = newwin(1, w, y, x);
     win = newwin(1, 1, 1, 1);
     
     wbkgd(win, COLOR_PAIR(T_BK) | ' ');
-    //reset();
 }
 
 Commander::~Commander() {
@@ -58,16 +55,22 @@ void Commander::setError(string error) {
     resultT = -1;
 }
 
-void Commander::refresh(string nleft, string ndet) {
+void Commander::refresh(int tabi, int tabm, string nleft, string ndet) {
     werase(win);
     //wattrset(win, A_STANDOUT);
+    //string tab = "[" + to_string(tabi) + "] ";
+    string tab = format(
+        "[{}/{}]",
+        to_string(tabi),
+        to_string(tabm)
+    );
     
-    string left;
+    string left = tab;
     if (commanding || resultT > 0) {
-        left = "CMD: " + cmd;
+        left += "CMD: " + cmd;
     }
     else {
-        left = nleft;
+        left += nleft;
     }
     
     mvwprintw(win, 0, 0, "%s", left.c_str());
@@ -78,7 +81,7 @@ void Commander::refresh(string nleft, string ndet) {
         curMode = A_BLINK;
     }
     
-    mvwchgat(win, 0, cx + 5, 1, curMode, 0, NULL);
+    mvwchgat(win, 0, cx + tab.length() + 5, 1, curMode, 0, NULL);
     
     wrefresh(win);
 }
@@ -190,9 +193,15 @@ void Commander::runCommand() {
     
     if (cmds[0] == "open") {
         if (cmds.size() < 2) {
-            //setSucc("NO FILE SPECIFIED :(");
-            return;
+            setSucc("NO FILE SPECIFIED :(");
         }
+        else if (cmds.size() > 2) {
+            setSucc("TOO MANY ARGS :(");
+        }
+        else {
+            NSX.openFile(cmds[1], 0);
+        }
+        return;
     }
     
     setError("I don't recognize this command :(");

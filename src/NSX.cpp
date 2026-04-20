@@ -50,6 +50,8 @@ void Nsx::start(StartConfig c) {
     /*
     Startup file
     */
+    string cwd = filesystem::current_path().string();
+    loga("STARTUP: CWD", cwd);
     if (c.path == "") {
         log("STARTUP: No filename provided, using blank file.");
     }
@@ -61,14 +63,12 @@ void Nsx::start(StartConfig c) {
     Create ncurses windows
     */
     NAV = new Navigator();
+    NAV->setCWD(cwd);
     //COMMANDER = new Commander(0, 0, XMAX - 1);
     COMMANDER = new Commander();
     
-    CURP = new Pad(DIR_W, 1, XMAX - DIR_W, YMAX - 1, c.yoffset);
-    //CURP = new Pad(c.yoffset);
-    CURP->loadFile(c.path);
-    CURP->putNCursor(0, 0);
-    PADS.push_back(CURP);
+    
+    openFile(c.path, c.yoffset);
     
     log("STARTUP: COMPLETE");
 
@@ -77,6 +77,8 @@ void Nsx::start(StartConfig c) {
 
 void Nsx::finish() {
     log("===== Cleaning up NSX =====");
+    int laline = CURP->curc->y;
+    
     delete COMMANDER;
     delete NAV;
     for (const Pad* p: PADS) {
@@ -85,6 +87,8 @@ void Nsx::finish() {
 
     printf("\033[?1003l\n");
     endwin();
+    
+    cout << laline << "\n";
 }
 
 void Nsx::run() {
@@ -110,6 +114,21 @@ void Nsx::run() {
         else if (input == "^[") {
             COMMANDER->commanding = !COMMANDER->commanding;
             COMMANDER->reset();
+        }
+        else if (input == "kLFT3") {
+            // ALT + Left
+            PAD_IDX = (PAD_IDX - 1) % PADS.size();
+            CURP = PADS[PAD_IDX];
+            NAV->setCWDFromFile(CURP->filePath);
+        }
+        else if (input == "kRIT3") {
+            // ALT + Right
+            PAD_IDX = (PAD_IDX - 1) % PADS.size();
+            CURP = PADS[PAD_IDX];
+            NAV->setCWDFromFile(CURP->filePath);
+        }
+        else if (input == "^O") {
+            COMMANDER->start("open");
         }
         
         if (layoutChanged) updateLayout();
@@ -139,7 +158,12 @@ void Nsx::run() {
             ' '
         );
         
-        COMMANDER->refresh(fname, LAST_INPUT + " " + stat);
+        COMMANDER->refresh(
+            PAD_IDX + 1, 
+            PADS.size(),
+            fname, 
+            LAST_INPUT + " " + stat
+        );
         NAV->refresh();
         CURP->refresh();
     }
@@ -185,6 +209,20 @@ void Nsx::updateLayout() {
 
     //mvwvline(DIR_WIN, 0, 9, 0, YMAX - 1);
     //wrefresh(DIR_WIN);
+}
+
+void Nsx::openFile(string path, int yoffset) {
+    CURP = new Pad(DIR_W, 1, XMAX - DIR_W, YMAX - 1, yoffset);    
+    //CURP = new Pad(c.yoffset);
+    CURP->loadFile(path, NAV->cwd);
+    CURP->putNCursor(0, 0);
+    PADS.push_back(CURP);
+    PAD_IDX = PADS.size() - 1;
+    
+    NAV->setCWDFromFile(CURP->filePath);
+    
+    COMMANDER->setSucc("OPENED " + CURP->fileName);
+    updateLayout();
 }
 
 void Nsx::tryQuit() {
