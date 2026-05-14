@@ -10,20 +10,28 @@
 #include "NSX.h"
 #include "Pad.h"
 
-Pad::Pad(int nx, int ny, int nw, int nh, int yoff) :
-    lore() {
+//Pad::Pad(int nx, int ny, int nw, int nh, int yoff) :
+Pad::Pad(int yoff) :
+        lore() {
     
-    x = nx, y = ny;
-    w = nw, h = nh;
+    //x = nx, y = ny;
+    //w = nw, h = nh;
+    x = 0, y = 0;
+    w = 1, h = 1;
+    padWinW = 1;
+    
     mx = 0, my = 0;
     mouseDragging = 0;
     scrx = 0, scry = 0;
     curc = new Cursor();
-    padWinW = w - NSX.NUM_W - 1;
+    //padWinW = w - NSX.NUM_W - 1;
     texts = {""};
     touched = true;
-    numWin = newwin(h, NSX.NUM_W, y, x);
-    padWin = newwin(h, w - NSX.NUM_W, y, x + NSX.NUM_W);
+    
+    //numWin = newwin(h, NSX.NUM_W, y, x);
+    //padWin = newwin(h, w - NSX.NUM_W, y, x + NSX.NUM_W);
+    numWin = newwin(1,1,1,1);
+    padWin = newwin(1,1,1,1);
     scrollok(padWin, true);
     
    // string s;
@@ -31,7 +39,7 @@ Pad::Pad(int nx, int ny, int nw, int nh, int yoff) :
    // log(s);
    
    curc->move(0, yoff, false);
-   log(to_string(TABSIZE));
+   //log(to_string(TABSIZE));
 }
 
 Pad::~Pad() {
@@ -61,12 +69,15 @@ void Pad::loadFile(string relPath, string cwd) {
         filePath = relPath;
     }
     else if (fpath.is_relative()) {
-        log("relative");
+       log("relative");
         //string cwd = filesystem::current_path().string();
         filePath = cwd + "/" + relPath;
     }
 
-    log(NSX.HOME_DIR + "/Documents/nsx/log.txt");
+    //log(NSX.HOME_DIR + "/Documents/nsx/log.txt");
+    
+    
+    filePath = filesystem::weakly_canonical(filePath).string();
     
     log("PAD: Opening file: " + filePath);
     string data = readFile(filePath);
@@ -83,27 +94,31 @@ void Pad::loadFile(string relPath, string cwd) {
 }
 
 void Pad::updateCurcAndScroll() {
+    //loga("ucasssss");
     if (curc->x > (int)texts[curc->y].size()) {
         curc->x = (int)texts[curc->y].size();
     }
     
     if (scry > curc->y) {
+        loga("here 1");
         scry = curc->y;
     }
 
     if (scry < curc->y - (NSX.YMAX - 2)) {
+        loga("here 2");
         scry = curc->y - (NSX.YMAX - 2);
     }
 
     scry = min(scry, (int)texts.size() - NSX.YMAX + 1 );
     scry = max(scry, 0);
+    loga(to_string(scry));
 
 
     if (curc->x < scrx) {
         scrx -= 1;
     }
 
-    if (curc->x > scrx + padWinW- 1) {
+    if (curc->x > scrx + padWinW - 1) {
         scrx += 1;
     }
 
@@ -120,12 +135,14 @@ void Pad::refresh() {
     int txtLim = min(NSX.YMAX - 1, (int)texts.size());
     for (int j = 0; j < txtLim; j++) {
         int idx = j + scry;
+        loga("idx", to_string(idx));
 
         string num = to_string(idx);
         string numPad (NSX.NUM_W - num.size(), ' ');
         mvwprintw(numWin, j, 0, "%s%s", num.c_str(), numPad.c_str());
 
         string text = texts[idx];
+        loga(text);
         
         T_MODE mode = T_NORM;
         T_MODE lMode = T_NORM;
@@ -616,7 +633,7 @@ void Pad::takeInput(string input) {
 }
 
 void Pad::putNCursor(int x, int y) {
-    wmove(padWin, x, y);
+    //wmove(padWin, x, y); //dont remember what this does??
 }
 
 void Pad::setPos(int nx, int ny) {
@@ -627,8 +644,9 @@ void Pad::setPos(int nx, int ny) {
 
 void Pad::setSize(int nw, int nh) {
     w = nw, h = nh;
+    padWinW = w - NSX.NUM_W - 1;
     wresize(numWin, h, NSX.NUM_W);
-    wresize(padWin, h, w - NSX.NUM_W);
+    wresize(padWin, h, padWinW);
 }
 
 ClearOp Pad::clearAtCursorBounds() {

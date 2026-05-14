@@ -46,8 +46,9 @@ void Navigator::takeInput(string input) {
 
 void Navigator::setCWD(string dp) {
     //cwd = filesystem::current_path().string();
-    loga("NAVIGATOR SET CWD", dp);
-    cwd = dp;
+    //loga("NAVIGATOR SET CWD", dp);
+    cwd = filesystem::canonical(dp).string();
+    loga("NAVIGATOR SET CWD", cwd);
     //filesystem::path p = dp;
     //filesystem::directoryPath
     items.clear();
@@ -60,7 +61,7 @@ void Navigator::setCWD(string dp) {
 }
 
 void Navigator::setCWDFromFile(string fp) {
-    filesystem::path p = fp;
+    filesystem::path p = filesystem::absolute(fp);
     filesystem::path d = p.parent_path();
     
     setCWD(d.string());

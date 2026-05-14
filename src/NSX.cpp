@@ -190,8 +190,9 @@ void Nsx::updateLayout() {
             // todo: this will place pads ontop of
             // eachother. need to place them next
             // to eachother if split view
-            p->setPos(DIR_W, 0);
+            //p->setPos(DIR_W, 0);
             p->setSize(XMAX - DIR_W, YMAX - 1);
+            p->setPos(DIR_W, 0);
         }
     }
     else {
@@ -202,8 +203,9 @@ void Nsx::updateLayout() {
             // todo: this will place pads ontop of
             // eachother. need to place them next
             // to eachother if split view
-            p->setPos(DIR_W, 1);
+            //p->setPos(DIR_W, 1);
             p->setSize(XMAX - DIR_W, YMAX - 1);
+            p->setPos(DIR_W, 1);
         }
     }
 
@@ -212,8 +214,8 @@ void Nsx::updateLayout() {
 }
 
 void Nsx::openFile(string path, int yoffset) {
-    CURP = new Pad(DIR_W, 1, XMAX - DIR_W, YMAX - 1, yoffset);    
-    //CURP = new Pad(c.yoffset);
+    //CURP = new Pad(DIR_W, 1, XMAX - DIR_W, YMAX - 1, yoffset);    
+    CURP = new Pad(yoffset);
     CURP->loadFile(path, NAV->cwd);
     CURP->putNCursor(0, 0);
     PADS.push_back(CURP);
