@@ -19,7 +19,8 @@ struct ClearOp {
 
 class Pad {
 public:
-    Pad(int nx, int ny, int nw, int nh, int yoff);
+    //Pad(int nx, int ny, int nw, int nh, int yoff);
+    Pad(int yoff);
     ~Pad();
 
     void refresh();
