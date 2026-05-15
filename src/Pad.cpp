@@ -100,18 +100,18 @@ void Pad::updateCurcAndScroll() {
     }
     
     if (scry > curc->y) {
-        loga("here 1");
+        //loga("here 1");
         scry = curc->y;
     }
 
     if (scry < curc->y - (NSX.YMAX - 2)) {
-        loga("here 2");
+        //loga("here 2");
         scry = curc->y - (NSX.YMAX - 2);
     }
 
     scry = min(scry, (int)texts.size() - NSX.YMAX + 1 );
     scry = max(scry, 0);
-    loga(to_string(scry));
+    //loga(to_string(scry));
 
 
     if (curc->x < scrx) {
@@ -135,14 +135,14 @@ void Pad::refresh() {
     int txtLim = min(NSX.YMAX - 1, (int)texts.size());
     for (int j = 0; j < txtLim; j++) {
         int idx = j + scry;
-        loga("idx", to_string(idx));
+        //loga("idx", to_string(idx));
 
         string num = to_string(idx);
         string numPad (NSX.NUM_W - num.size(), ' ');
         mvwprintw(numWin, j, 0, "%s%s", num.c_str(), numPad.c_str());
 
         string text = texts[idx];
-        loga(text);
+        //loga(text);
         
         T_MODE mode = T_NORM;
         T_MODE lMode = T_NORM;
@@ -187,7 +187,7 @@ void Pad::refresh() {
                     mode = T_NORM;
                 }
             }
-                        
+
             if (i >= scrx && (lMode != mode || i == text.size() - 1) || i - scrx == padWinW) {
                 //if (i == text.size() - 1) {
                 //    loga(to_string(idx), to_string(i), string(1, c));
@@ -196,40 +196,21 @@ void Pad::refresh() {
                 wattron(padWin, COLOR_PAIR(lMode));
 
                 string ps = text.substr(startI, i - startI + 1);
-                mvwaddnstr(padWin, j, startI - scrx, ps.c_str(), padWinW - (startI - scrx));
+                mvwaddnstr(padWin, j, startI - scrx, ps.c_str(), padWinW - (startI - scrx) - 1);
 
                 startI = i;
             }
             
             lMode = mode;
         }
-
-        /*
-        string endPad(
-            max(
-                0,
-                padWinW - ((int)text.size() - scrx)
-            ),
-            '+'
-        );
-        //mvwprintw(padWin, j, startI + 1, "%s", endPad.c_str());
-        mvwaddnstr(
-            padWin,
-            j,
-            startI == 0 ? 0 : startI + 1,
-            endPad.c_str(),
-            padWinW
-        );
-        */
-        
-        //wattron(padWin, COLOR_PAIR(1));
-        //mvwprintw(padWin, j, 0, "%s%s", sub.c_str(), endPad.c_str());
-        //mvwaddnstr(padWin, j, 0, sub.append(pad).c_str(), padWinW);
-        
-        //wattroff(padWin, COLOR_PAIR(1));
     }
 
-    for (int j = txtLim; j < NSX.YMAX - 1; j++) {
+    
+    /*
+    Fill beyond the last line, 
+    for files less than the height of the screen
+    */
+    for (int j = txtLim; j < NSX.YMAX - 2; j++) {
         int idx = j + scry;
         string numPad (NSX.NUM_W, ' ');
         mvwprintw(numWin, j, 0, "%s", numPad.c_str());
@@ -633,7 +614,7 @@ void Pad::takeInput(string input) {
 }
 
 void Pad::putNCursor(int x, int y) {
-    //wmove(padWin, x, y); //dont remember what this does??
+    wmove(padWin, x, y); //dont remember what this does??
 }
 
 void Pad::setPos(int nx, int ny) {
